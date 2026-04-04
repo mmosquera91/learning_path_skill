@@ -9,9 +9,44 @@ A personal AI tutor skill for [Hermes Agent](https://github.com/NousResearch/her
 3. **Evaluates responses** with a two-axis rubric (conceptual comprehension + application ability, 1-10)
 4. **Adapts the plan** — accelerates on high scores, repeats weak areas, decomposes modules on low scores
 5. **Weekly review** every Sunday at 10 PM with metrics and recommendations
-6. **Spaced repetition** — completed modules get reviewed at increasing intervals
+6. **Spaced repetition** — completed modules get reviewed at increasing intervals *(implemented but not yet validated end-to-end)*
 7. **All state in SQLite** — portable, zero-config, easy to back up
 8. **Exports to Obsidian** — full learning journey as Markdown
+
+### Example Session
+
+```
+You: /tutor init Python for data science
+Tutor: 📚 Syllabus: Python for Data Science (6-8 weeks, 12 modules)
+       1. Python Fundamentals Refresher
+       2. NumPy & Array Operations
+       3. Pandas & Data Wrangling
+       ...
+       12. Capstone Project — End-to-End Analysis
+       
+       Reply /confirm to activate or /edit [feedback] to modify.
+
+You: /confirm
+Tutor: ✅ Learning path activated: Python for Data Science
+       📚 12 modules loaded
+       🎯 First module: Python Fundamentals Refresher
+       Daily tasks start tomorrow at 9 AM.
+
+--- 9:00 AM next day (automated via cron) ---
+
+Tutor: 📚 Daily Task — Python Fundamentals Refresher
+       Write a function that reads a CSV file and returns summary 
+       statistics (mean, median, std dev) for each numeric column...
+       
+       Reply /submit <your answer> when done.
+
+You: /submit Here's my solution: [code]
+Tutor: 📋 Evaluation — Python Fundamentals Refresher
+       Score: 8.5/10
+       ✅ Clean use of pandas.describe()
+       📈 Try adding error handling for missing values
+       Great work! Moving to next module: NumPy & Array Operations
+```
 
 ## Architecture
 
@@ -72,40 +107,17 @@ python3 ~/.hermes/skills/learning-path/scripts/init_db.py
 python3 ~/.hermes/skills/learning-path/scripts/migrate_db.py
 ```
 
-### Cron Jobs (Optional — for automated delivery)
+### Cron Jobs
 
-Create the daily task job:
+Cron jobs are created **automatically** when you run `/confirm` after `/tutor init`. You don't need to set them up manually.
 
-```python
-cronjob(
-    action="create",
-    name="learning-path-daily",
-    schedule="0 9 * * *",        # 9 AM daily
-    skill="learning-path",
-    deliver="telegram",
-    prompt="""Eres Hermilio Tutor..."""  # See SKILL.md for full prompt
-)
-```
+If you ever need to recreate them (e.g., after a reset), ask your agent:
 
-Create the weekly review job:
+> "Create the cron jobs for the learning-path skill: daily at 9 AM and weekly review Sundays at 10 PM, deliver to telegram."
 
-```python
-cronjob(
-    action="create",
-    name="learning-path-weekly",
-    schedule="0 22 * * 0",       # Sundays 10 PM
-    skill="learning-path",
-    deliver="telegram",
-    prompt="""Eres Hermilio Tutor..."""  # See SKILL.md for full prompt
-)
-```
+The agent will call the `cronjob` tool with the full self-contained prompts from `subskills/daily.md` and `subskills/adapt.md`. Those prompts include all SQL queries and step-by-step logic — no prior session context needed.
 
-Or via CLI:
-
-```bash
-hermes cron create "0 9 * * *" --skill learning-path --deliver telegram
-hermes cron create "0 22 * * 0" --skill learning-path --deliver telegram
-```
+> **Why not manual `hermes cron create`?** The prompts are ~500 lines each (all the SQL + decision logic). The cronjob tool handles this correctly when called programmatically, but typing them in a shell would be impractical. The agent does it for you during `/confirm`.
 
 ### Obsidian Integration (Optional)
 
@@ -157,21 +169,26 @@ Migration support via `scripts/migrate_db.py` — add new columns without data l
 
 ## Design Decisions
 
+These are the non-obvious problems we hit and how we solved them. If you're building on this stack (Hermes + crons + Telegram), these will save you time.
+
 | Decision | Choice | Why |
 |----------|--------|-----|
-| Persona in SKILL.md, not separate profile | Cron jobs run on default profile, no `--profile` flag available | Keeps everything self-contained |
-| Explicit /submit command | Prevents casual messages from being evaluated as submissions | 20h window as fallback for untagged responses |
-| Skill split into subskills | Single SKILL.md too large for local models | Router pattern keeps context lean |
-| SQLite over JSON files | Concurrent access, querying, atomicity | WAL mode for safety |
-| LLM generates JSON for evaluations | Structured output prevents hallucinated scoring | Parseable, storable, comparable |
+| Persona in SKILL.md, not separate profile | Cron jobs run on default profile — Hermes has no `--profile` flag for cron | Embedding the persona in the skill keeps it self-contained. A separate profile would be cleaner but the cron layer doesn't support it. |
+| Explicit /submit command | A casual message like "what is a lifetime in Rust?" would get evaluated as a task submission | 20h response window as fallback (asks for confirmation before evaluating), but /submit is the primary path. Without this, every question becomes an evaluation. |
+| Skill split into 4 subskills | A single SKILL.md with all the logic would be 500+ lines | Local models (Ollama) struggle with long prompts. The router pattern keeps context lean — SKILL.md is ~180 lines, subskills are loaded on demand. |
+| SQLite over JSON files | Concurrent access, atomic writes, querying | WAL mode handles the write pattern (cron writes, agent reads). JSON files would need manual locking. |
+| LLM outputs structured JSON for evaluations | Free-form text evaluation leads to inconsistent scoring | JSON schema forces the model to commit to numbers and specific feedback. Easier to parse, store, and compare. |
+| Cron prompts include all SQL inline | Cron sessions start with zero context — no conversation history | Every query, every decision branch is written out in the prompt. This makes them long (~500 lines) but reliable. |
 
 ## Limitations & Known Issues
 
 - LLM may generate unverified URLs in syllabi — HEAD request validation mitigates this
-- Evaluation quality depends on the model's instruction-following ability
+- Evaluation quality depends on the model's instruction-following ability. Tested with glm-5.1; local models via Ollama may need simplified prompts or shorter subskills
+- **Spaced repetition is implemented but not yet validated end-to-end** — the logic exists in daily.md and eval.md, but needs a full cycle (init → submit → eval → review) to confirm it works correctly
 - No progress sync across devices (single SQLite file)
 - `/tutor switch` requires at least 2 paths to exist
-- Obsidian export requires `OBSIDIAN_VAULT_PATH` to be set
+- Obsidian export requires `OBSIDIAN_VAULT_PATH` to be set in `~/.hermes/.env`
+- The `/confirm` step should create cron jobs automatically — currently this requires the agent to have cronjob tool access during the init flow
 
 ## License
 
