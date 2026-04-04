@@ -5,6 +5,12 @@ User sends: `/tutor init <topic>` or "quiero aprender <topic>"
 
 ## Steps
 
+### 0. Ensure database exists
+```bash
+python3 ~/.hermes/skills/learning-path/scripts/init_db.py
+```
+This is idempotent — safe to run every time. It creates the DB if missing, skips if already initialized.
+
 ### 1. Check for existing active path
 ```bash
 python3 -c "

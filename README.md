@@ -127,34 +127,21 @@ Tutor: 📋 Evaluation — Variables & Data Types
 
 ### Installation
 
-**Recommended — via Hermes skills install:**
-
 ```bash
 hermes skills install git+https://github.com/mmosquera91/learning_path_skill.git
 ```
 
-**Alternative — manual git clone:**
-
+Or manually:
 ```bash
 git clone https://github.com/mmosquera91/learning_path_skill.git ~/.hermes/skills/learning-path
 ```
 
-**Then initialize and verify:**
-
-```bash
-# Initialize the database
-python3 ~/.hermes/skills/learning-path/scripts/init_db.py
-
-# Run migration check
-python3 ~/.hermes/skills/learning-path/scripts/migrate_db.py
-
-# Verify skill is discoverable
-hermes skills list | grep learning-path
-
-# Verify DB tables were created
-sqlite3 ~/.hermes/skills/learning-path/learning.db ".tables"
-# Expected output: config  daily_tasks  modules  paths  resources  schema_version
+Then start with:
 ```
+/tutor init <topic>
+```
+
+The database initializes automatically on first use.
 
 ### Cron Jobs
 
