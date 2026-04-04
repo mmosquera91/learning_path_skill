@@ -13,39 +13,71 @@ A personal AI tutor skill for [Hermes Agent](https://github.com/NousResearch/her
 7. **All state in SQLite** — portable, zero-config, easy to back up
 8. **Exports to Obsidian** — full learning journey as Markdown
 
-### Example Session
+### Example Session (Real)
+
+This is an actual session — not a polished demo. The evaluator gave a low score because the code had real bugs. That's the point.
 
 ```
-You: /tutor init Python for data science
-Tutor: 📚 Syllabus: Python for Data Science (6-8 weeks, 12 modules)
-       1. Python Fundamentals Refresher
-       2. NumPy & Array Operations
-       3. Pandas & Data Wrangling
+You: /tutor init Python
+
+Tutor: 📚 Syllabus: Python (12 modules, ~6 weeks)
+       1. Variables & Data Types
+       2. Control Flow (if/else, loops)
+       3. Functions & Scope
        ...
-       12. Capstone Project — End-to-End Analysis
+       12. File I/O & Error Handling
        
+       36 resources found. 28 verified OK, 8 unverified.
        Reply /confirm to activate or /edit [feedback] to modify.
 
 You: /confirm
-Tutor: ✅ Learning path activated: Python for Data Science
+
+Tutor: ✅ Learning path activated: Python
        📚 12 modules loaded
-       🎯 First module: Python Fundamentals Refresher
-       Daily tasks start tomorrow at 9 AM.
+       🎯 First module: Variables & Data Types
+       Cron jobs created (daily 9 AM, weekly Sunday 10 PM).
 
---- 9:00 AM next day (automated via cron) ---
+--- First task ---
 
-Tutor: 📚 Daily Task — Python Fundamentals Refresher
-       Write a function that reads a CSV file and returns summary 
-       statistics (mean, median, std dev) for each numeric column...
+Tutor: 📚 Daily Task — Variables & Data Types
+       
+       Declare variables for: your name (string), age (int), height 
+       in meters (float), and is_student (bool). Then:
+       1. Print a greeting using an f-string
+       2. Print your age in months
+       3. Print your height in cm
+       4. Use type() to verify each variable's type
        
        Reply /submit <your answer> when done.
 
-You: /submit Here's my solution: [code]
-Tutor: 📋 Evaluation — Python Fundamentals Refresher
-       Score: 8.5/10
-       ✅ Clean use of pandas.describe()
-       📈 Try adding error handling for missing values
-       Great work! Moving to next module: NumPy & Array Operations
+You: /submit 
+     nombre = "Miguel"
+     edad = 34
+     altura = 1.83
+     is_student = False
+     
+     print(f"Hola, me llamo {nombre}")
+     print(f"Tengo {edad/12} meses")
+     print(f"Mido {1.83 * 100} cm")
+     print(type(nombre), type(edad), type(altura), type(is_student))
+
+Tutor: 📋 Evaluation — Variables & Data Types
+       Score: 4.5/10
+       
+       ❌ edad/12 divides age by 12 (2.8 months?) — you wanted edad*12 
+          for age in months
+       ❌ Hardcoded 1.83 instead of using the altura variable
+       ❌ Missing = in height variable (caught before submission)
+       
+       ✅ Correct variable types declared
+       ✅ Correct use of f-strings
+       ✅ type() used correctly
+       
+       Decision: REPEAT — Let's reinforce this. A new task will focus 
+       on the areas that need work.
+       Review in 1 day.
+
+--- Module repeated with targeted task next session ---
 ```
 
 ## Architecture
@@ -96,15 +128,33 @@ Tutor: 📋 Evaluation — Python Fundamentals Refresher
 
 ### Installation
 
-```bash
-# Clone into Hermes skills directory
-git clone https://github.com/mmosquera91/learning_path_skill.git ~/.hermes/skills/learning-path
+**Recommended — via Hermes skills install:**
 
+```bash
+hermes skills install git+https://github.com/mmosquera91/learning_path_skill.git
+```
+
+**Alternative — manual git clone:**
+
+```bash
+git clone https://github.com/mmosquera91/learning_path_skill.git ~/.hermes/skills/learning-path
+```
+
+**Then initialize and verify:**
+
+```bash
 # Initialize the database
 python3 ~/.hermes/skills/learning-path/scripts/init_db.py
 
-# Verify
+# Run migration check
 python3 ~/.hermes/skills/learning-path/scripts/migrate_db.py
+
+# Verify skill is discoverable
+hermes skills list | grep learning-path
+
+# Verify DB tables were created
+sqlite3 ~/.hermes/skills/learning-path/learning.db ".tables"
+# Expected output: config  daily_tasks  modules  paths  resources  schema_version
 ```
 
 ### Cron Jobs
@@ -189,6 +239,27 @@ These are the non-obvious problems we hit and how we solved them. If you're buil
 - `/tutor switch` requires at least 2 paths to exist
 - Obsidian export requires `OBSIDIAN_VAULT_PATH` to be set in `~/.hermes/.env`
 - The `/confirm` step should create cron jobs automatically — currently this requires the agent to have cronjob tool access during the init flow
+
+## Roadmap
+
+**v1.0 — Current**
+- Syllabus generation with URL validation
+- Daily tasks via cron + Telegram
+- Structured evaluation with rubric
+- Inactivity handling
+- Weekly review
+
+**v1.1 — In progress**
+- Spaced repetition validated end-to-end
+- Multi-path with /tutor switch
+- Adaptation triggers (auto-decompose, auto-accelerate)
+- Milestone celebrations
+
+**v2.0 — Planned**
+- Configurable delivery time (not hardcoded 9 AM)
+- Multi-language support beyond Spanish/English
+- Local model (Ollama) optimized prompts
+- Progress sync across devices
 
 ## License
 
