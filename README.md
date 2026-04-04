@@ -51,23 +51,22 @@ Tutor: 📚 Daily Task — Variables & Data Types
        Reply /submit <your answer> when done.
 
 You: /submit 
-     nombre = "Miguel"
-     edad = 34
-     altura = 1.83
-     is_student = False
+     name = "Sarah"
+     age = 27
+     height = 1.65
+     is_student = True
      
-     print(f"Hola, me llamo {nombre}")
-     print(f"Tengo {edad/12} meses")
-     print(f"Mido {1.83 * 100} cm")
-     print(type(nombre), type(edad), type(altura), type(is_student))
+     print(f"Hi, I'm {name}")
+     print(f"I am {age/12} months old")
+     print(f"My height is {1.65 * 100} cm")
+     print(type(name), type(age), type(height), type(is_student))
 
 Tutor: 📋 Evaluation — Variables & Data Types
        Score: 4.5/10
        
-       ❌ edad/12 divides age by 12 (2.8 months?) — you wanted edad*12 
+       ❌ age/12 divides age by 12 (2.25 months?) — you wanted age*12 
           for age in months
-       ❌ Hardcoded 1.83 instead of using the altura variable
-       ❌ Missing = in height variable (caught before submission)
+       ❌ Hardcoded 1.65 instead of using the height variable
        
        ✅ Correct variable types declared
        ✅ Correct use of f-strings
