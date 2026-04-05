@@ -47,21 +47,33 @@ Before generating the syllabus, research the topic to find real, specific learni
 - Source domain (prioritize trusted domains per rules below)
 
 **TRUSTED SOURCE RULES (strictly enforce):**
-1. Only use URLs from well-established, reputable domains. Preferred:
-   - Official docs: docs.python.org, developer.mozilla.org, docs.rust-lang.org, docs.microsoft.com, docs.aws.amazon.com, kubernetes.io/docs, reactjs.org/docs, etc.
-   - Learning platforms: coursera.org, edx.org, freecodecamp.org, khanacademy.org, MIT OpenCourseWare (ocw.mit.edu), Stanford Online (online.stanford.edu), chess.com/lessons (specific paths only)
-   - Video: youtube.com (official channels or well-known educators only)
-   - Reference: wikipedia.org (overviews only), arxiv.org (research topics)
-   - Community: stackoverflow.com, github.com (official repos only)
-2. **URLs MUST be specific** — reject generic URLs like `chess.com/lessons` or `khanacademy.org/math`. Require lesson-specific paths like `chess.com/lessons/attacks-and-defenses` or `khanacademy.org/math/algebra/x2f8bb11595b61c86:quadratics`
-3. Do NOT fabricate URLs. Only use URLs found in search results.
-4. Do NOT use personal blogs, random Medium posts, or unknown domains.
+
+**TIER SYSTEM (prioritize by reliability):**
+- **TIER 1 (⭐⭐⭐⭐⭐):** chess.com/lessons/*, lichess.org/learn/*, lichess.org/practice/* — ALWAYS prioritize these, minimum 50% of resources
+- **TIER 2 (⭐⭐⭐⭐):** coursera.org, edx.org, khanacademy.org, official documentation — max 2 per module
+- **TIER 3 (⭐⭐):** YouTube single videos ONLY — max 1 per module, NO PLAYLISTS
+- **TIER 4 (⭐⭐):** Reference materials — max 1 per module
+
+**CRITICAL URL RULES:**
+1. **NO YOUTUBE PLAYLISTS:** Reject ANY URL with `&list=` or `playlist?` — these break when videos change
+2. **URLs MUST be specific** — reject generic paths
+3. For chess.com: valid patterns are `chess.com/lessons/<lesson-slug>` only
+4. For lichess: valid patterns are `lichess.org/learn#/<number>` or `lichess.org/practice/<category>/<slug>`
+5. Do NOT fabricate URLs — only use URLs from search results
+6. Do NOT use personal blogs or unknown domains
 
 Store the research results in a structured format for the next step.
 
 ### 3. Generate the syllabus
-Use the LLM to generate a structured learning path, **incorporating the research results from Step 2**. Prompt:
+Use the LLM to generate a structured learning path, **incorporating the research results from Step 2**. 
 
+**CRITICAL: Follow TIER system when selecting resources:**
+- TIER 1 (⭐⭐⭐⭐⭐): chess.com/lessons/*, lichess.org/learn/*, lichess.org/practice/* — MINIMUM 50% of resources
+- TIER 2 (⭐⭐⭐⭐): coursera, edx, khanacademy, official docs — max 2 per module
+- TIER 3 (⭐⭐): YouTube SINGLE VIDEOS only — max 1 per module
+- NEVER include YouTube playlists (URLs with `&list=`)
+
+Prompt:
 ```
 Generate a structured learning syllabus for: {topic}
 
@@ -74,16 +86,20 @@ Requirements:
 - 8-15 modules, ordered from foundational to advanced
 - Each module has: title, description (2-3 sentences), estimated time to complete
 - Include 3-4 resources per module, selected ONLY from the research results above
-- Each resource MUST use the exact URL from research (do not modify URLs)
+- PRIORITY ORDER for resource selection (follow strictly):
+  1. chess.com/lessons/<specific-lesson> (TIER 1 - most preferred)
+  2. lichess.org/learn#/<number> or lichess.org/practice/<category> (TIER 1)
+  3. coursera.org/learn/*, edx.org/learn/*, khanacademy.org/* (TIER 2)
+  4. YouTube single videos ONLY if no better option (TIER 3)
+- REJECT: YouTube playlists (any URL with &list= parameter)
+- REJECT: Generic homepage URLs
+- Each resource MUST use the exact URL from research
 - Resource types: doc, video, exercise, article
 - Mark 3-4 milestones (key checkpoint modules)
 - Estimate total duration in weeks
 - Language: match the user's language
-- Map each module to specific, relevant resources — avoid generic URLs
 
-Example of good resource selection:
-- Module "Ataques y Defensas" → chess.com/lessons/attacks-and-defenses (specific lesson)
-- NOT chess.com/lessons (generic homepage)
+TIER BALANCE CHECK: Each module must have at least 50% TIER 1 resources.
 
 Output as valid JSON:
 {
@@ -105,11 +121,43 @@ Output as valid JSON:
 ```
 
 ### 4. Validate resources (Fase 2+)
-For each URL in the generated syllabus:
-- Try a HEAD request using `terminal`: `curl -sI -o /dev/null -w "%{http_code}" --max-time 10 "<URL>"`
-- If status 200-399: mark as `verified='ok'`
-- If timeout or 404+: mark as `verified='unverified'`
-- Collect list of unverified URLs
+
+**STEP 4A: Run validation script**
+Save syllabus to temp file and run validator:
+```bash
+python3 ~/.hermes/skills/learning-path/scripts/validate_urls.py --http < /tmp/syllabus.json
+```
+
+This checks:
+- URL pattern matches trusted sources (TIER 1-4)
+- NO YouTube playlists (rejects `&list=`)
+- HTTP status for TIER 1-2 URLs
+- Balance: min 50% TIER 1 per module
+
+**STEP 4B: Review validation output**
+The script outputs:
+```
+TIER 1 (⭐⭐⭐⭐⭐ Interactive): 24
+TIER 2 (⭐⭐⭐⭐ Official): 8
+TIER 3 (⭐⭐ YouTube): 4
+INVALID: 2
+
+✅ Module Name (TIER 1: 60%)
+❌ Bad Module (TIER 1: 25%) — Needs more chess.com/lichess resources
+   ❌ INVALID: https://youtube.com/playlist?...
+      Reason: YouTube PLAYLIST - not allowed
+```
+
+**STEP 4C: Fix or regenerate**
+- If INVALID URLs found: Remove them or find alternatives
+- If TIER 1 < 50%: Add more chess.com/lichess resources
+- If YouTube playlists found: Replace with single video URLs
+- Re-run validation until all modules pass
+
+**Quick URL check (single URL):**
+```bash
+python3 ~/.hermes/skills/learning-path/scripts/validate_urls.py --check "https://..."
+```
 
 ### 5. Present syllabus for review
 Format the syllabus using templates/syllabus.md and send to the user via Telegram.
