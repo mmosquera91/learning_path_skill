@@ -123,7 +123,27 @@ conn.commit()
 conn.close()
 ```
 
-### 7. Send confirmation message
+### 7. Create cron jobs (if they don't exist)
+Before creating cron jobs, check existing ones to avoid duplicates:
+
+```python
+# Use cronjob(action="list") to check for existing jobs
+# Look for jobs with names: "learning-path-daily" and "learning-path-weekly"
+# If a job with matching name already exists → skip it, do NOT create a duplicate
+# If no matching name found → create it using cronjob(action="create")
+```
+
+Rules:
+- **Always check by name** (`learning-path-daily`, `learning-path-weekly`) before creating.
+- If a cron with that name exists (even if paused or with different schedule), do NOT create another.
+- Only create missing cron jobs. Report which ones already existed vs. were created.
+
+Daily cron: schedule `0 9 * * *`, deliver `telegram`, skill `learning-path`
+Weekly cron: schedule `0 22 * * 0`, deliver `telegram`, skill `learning-path`
+
+The prompt for each must contain the FULL content of the corresponding subskill (`daily.md` or `adapt.md`) inlined — cron sessions have zero context.
+
+### 8. Send confirmation message
 ```
 ✅ Learning path activated: {topic}
 📚 {N} modules loaded

@@ -133,7 +133,18 @@ Where decision_message:
 - repeat: "Let's reinforce this. I'll prepare a new task for next session."
 - decompose: "This topic needs more groundwork. I've broken it into smaller steps: {sub_modules}"
 
-### 9. Check adaptation triggers (Fase 3)
+### 9. Handle score disputes
+If the user disagrees with their score after receiving feedback:
+
+1. **Always explain the reasoning first.** Reference specific parts of their response that led to the score. Quote the rubric criteria that apply.
+2. **Only adjust the score if the user points to a concrete error** — e.g., "I did cover X in paragraph 2" or "the rubric says Y but you scored me on Z".
+3. **Do NOT adjust just because the user protests.** A generic "I think I deserved better" or "that's unfair" is not grounds for recalculation.
+4. **If a concrete error is identified,** re-evaluate ONLY the disputed axis (conceptual_comprehension or application_ability), recalculate the average, and update the database. Send updated feedback.
+5. **If no concrete error,** acknowledge their feeling but stand by the evaluation: "I understand the score feels low. Based on the rubric, [specific reason]. If you'd like to try again with a new task, I'll generate one for next session."
+
+This keeps evaluations consistent and prevents score inflation from negotiation.
+
+### 10. Check adaptation triggers (Fase 3)
 After saving evaluation, check:
 - 2 consecutive scores 4-6.9 → add a supporting resource
   ```sql
