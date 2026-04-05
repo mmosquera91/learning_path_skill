@@ -49,18 +49,21 @@ Before generating the syllabus, research the topic to find real, specific learni
 **TRUSTED SOURCE RULES (strictly enforce):**
 
 **TIER SYSTEM (prioritize by reliability):**
-- **TIER 1 (⭐⭐⭐⭐⭐):** chess.com/lessons/*, lichess.org/learn/*, lichess.org/practice/* — ALWAYS prioritize these, minimum 50% of resources
-- **TIER 2 (⭐⭐⭐⭐):** coursera.org, edx.org, khanacademy.org, official documentation — max 2 per module
+- **TIER 1 (⭐⭐⭐⭐⭐):** Interactive learning platforms with exercises/lessons — ALWAYS prioritize these, minimum 50% of resources
+- **TIER 2 (⭐⭐⭐⭐):** Official docs, established courses (coursera, edx, khanacademy) — max 2 per module
 - **TIER 3 (⭐⭐):** YouTube single videos ONLY — max 1 per module, NO PLAYLISTS
 - **TIER 4 (⭐⭐):** Reference materials — max 1 per module
 
 **CRITICAL URL RULES:**
 1. **NO YOUTUBE PLAYLISTS:** Reject ANY URL with `&list=` or `playlist?` — these break when videos change
-2. **URLs MUST be specific** — reject generic paths
-3. For chess.com: valid patterns are `chess.com/lessons/<lesson-slug>` only
-4. For lichess: valid patterns are `lichess.org/learn#/<number>` or `lichess.org/practice/<category>/<slug>`
-5. Do NOT fabricate URLs — only use URLs from search results
-6. Do NOT use personal blogs or unknown domains
+2. **URLs MUST be specific** — reject generic paths like `/tutorials` or `/courses`
+3. **TIER 1 pattern examples by topic:**
+   - Programming: `exercism.org/tracks/*`, `codecademy.com/learn/*`, `leetcode.com/studyplan/*`
+   - Languages: `duolingo.com/lesson/*`, `babbel.com/learn/*`
+   - Chess: `chess.com/lessons/<lesson-slug>`, `lichess.org/learn#/<number>`
+   - Math: `khanacademy.org/<subject>/*`, `brilliant.org/courses/*`
+4. Do NOT fabricate URLs — only use URLs from search results
+5. Do NOT use personal blogs or unknown domains
 
 Store the research results in a structured format for the next step.
 
@@ -68,10 +71,17 @@ Store the research results in a structured format for the next step.
 Use the LLM to generate a structured learning path, **incorporating the research results from Step 2**. 
 
 **CRITICAL: Follow TIER system when selecting resources:**
-- TIER 1 (⭐⭐⭐⭐⭐): chess.com/lessons/*, lichess.org/learn/*, lichess.org/practice/* — MINIMUM 50% of resources
-- TIER 2 (⭐⭐⭐⭐): coursera, edx, khanacademy, official docs — max 2 per module
+- TIER 1 (⭐⭐⭐⭐⭐): Interactive platforms with exercises/lessons — MINIMUM 50% of resources
+- TIER 2 (⭐⭐⭐⭐): Official courses (coursera, edx, khanacademy) — max 2 per module  
 - TIER 3 (⭐⭐): YouTube SINGLE VIDEOS only — max 1 per module
 - NEVER include YouTube playlists (URLs with `&list=`)
+
+**Priority order for TIER 1 sources (adapt to topic):**
+- Programming: exercism.org, codecademy.com, leetcode.com study plans, official language tutorials
+- Languages: duolingo.com, babbel.com, busuu.com
+- Chess: chess.com/lessons, lichess.org/learn
+- Math/Science: khanacademy.org, brilliant.org/courses
+- Music: musictheory.net/lessons, teoria.com
 
 Prompt:
 ```
@@ -87,10 +97,9 @@ Requirements:
 - Each module has: title, description (2-3 sentences), estimated time to complete
 - Include 3-4 resources per module, selected ONLY from the research results above
 - PRIORITY ORDER for resource selection (follow strictly):
-  1. chess.com/lessons/<specific-lesson> (TIER 1 - most preferred)
-  2. lichess.org/learn#/<number> or lichess.org/practice/<category> (TIER 1)
-  3. coursera.org/learn/*, edx.org/learn/*, khanacademy.org/* (TIER 2)
-  4. YouTube single videos ONLY if no better option (TIER 3)
+  1. Interactive platforms with exercises (TIER 1 - most preferred)
+  2. Official courses: coursera.org/learn/*, edx.org/learn/*, khanacademy.org/* (TIER 2)
+  3. YouTube single videos ONLY if no better option (TIER 3)
 - REJECT: YouTube playlists (any URL with &list= parameter)
 - REJECT: Generic homepage URLs
 - Each resource MUST use the exact URL from research

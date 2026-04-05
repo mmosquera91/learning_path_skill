@@ -44,16 +44,24 @@ When gathering resources, prioritize by tier:
 
 | Tier | Source Type | Reliability | Max per Module |
 |------|-------------|-------------|----------------|
-| TIER 1 | Interactive platforms (chess.com/lessons/*, lichess.org/learn/*, lichess.org/practice/*) | ⭐⭐⭐⭐⭐ | Unlimited |
+| TIER 1 | Interactive platforms (official lessons, practice exercises) | ⭐⭐⭐⭐⭐ | Unlimited |
 | TIER 2 | Official docs, established courses (coursera, edx, khanacademy) | ⭐⭐⭐⭐ | 2 |
 | TIER 3 | YouTube (single videos only, NO playlists) | ⭐⭐ | 1 |
 | TIER 4 | Reference materials (wikipedia, blogs) | ⭐⭐ | 1 |
 
 **RULES:**
-- MINIMUM 50% of resources MUST be TIER 1
+- MINIMUM 50% of resources MUST be TIER 1 (interactive platforms)
 - NO YouTube playlist URLs (they break when videos are reordered)
 - VERIFY all TIER 1 URLs match known valid patterns before presenting
 - If validation fails for >30% of URLs, regenerate with more conservative sources
+
+**Topic-Specific TIER 1 Examples:**
+- Programming: codecademy.com, exercism.org, leetcode.com, docs.python.org/tutorials
+- Languages: duolingo.com, babbel.com, busuu.com
+- Chess: chess.com/lessons/*, lichess.org/learn/*
+- Math: khanacademy.org/math/*, brilliant.org/courses/*
+- Music: musictheory.net/lessons/*, teoria.com
+- Adapt the validator patterns to the specific topic being taught
 
 ## ROUTER — Command Dispatch
 

@@ -12,26 +12,38 @@ import subprocess
 import argparse
 from urllib.parse import urlparse
 
-# URL patterns by tier
+# URL patterns by tier - GENERIC patterns that work across topics
 TIER_PATTERNS = {
-    1: [  # Highest reliability - interactive platforms
-        (r'chess\.com/lessons/[a-z0-9-]+$', "chess.com lesson"),
-        (r'lichess\.org/learn#/\d+', "lichess learn"),
-        (r'lichess\.org/practice/[\w-]+/[\w-]+', "lichess practice"),
-        (r'lichess\.org/practice/[\w-]+$', "lichess practice category"),
+    1: [  # Highest reliability - interactive learning platforms
+        # Generic interactive lesson patterns
+        (r'/lessons?/[\w-]+$', "interactive lesson"),
+        (r'/learn(/|#|/\d+|ing-paths?)[\w/#]*$', "learn platform"),
+        (r'/practice/[\w/-]+', "practice exercises"),
+        (r'/exercises?/[\w/-]+', "exercises"),
+        (r'/tutorials?/interactive[\w/-]*', "interactive tutorial"),
+        (r'exercism\.org/tracks?/[\w/-]+', "exercism track"),
+        (r'codecademy\.com/learn/[\w/-]+', "codecademy"),
+        (r'duolingo\.com/lesson|duolingo\.com/course', "duolingo"),
+        (r'brilliant\.org/courses?/[\w/-]+', "brilliant course"),
+        (r'leetcode\.com/studyplan/[\w/-]+', "leetcode study plan"),
     ],
-    2: [  # Official courses
+    2: [  # Official courses and docs
         (r'coursera\.org/learn/[\w-]+', "coursera"),
         (r'edx\.org/learn/[\w-]+', "edx"),
         (r'khanacademy\.org/[\w/-]+', "khan academy"),
         (r'freecodecamp\.org/learn/[\w/-]+', "freecodecamp"),
+        (r'udemy\.com/course/[\w-]+', "udemy course"),
+        (r'udacity\.com/course/[\w-]+', "udacity course"),
+        (r'/docs(?:/[\w-]+)+', "official documentation"),
     ],
     3: [  # YouTube (single videos only)
         # Special handling - no playlists allowed
     ],
     4: [  # Reference
         (r'wikipedia\.org/wiki/[\w_]+', "wikipedia"),
-        (r'github\.com/[\w-]+/[\w-]+', "github repo"),
+        (r'github\.com/[\w-]+/[\w-]+/(?:wiki|blob|tree)', "github wiki/docs"),
+        (r'medium\.com/@[\w-]+/[\w-]+', "medium article"),
+        (r'dev\.to/[\w-]+/[\w-]+', "dev.to article"),
     ]
 }
 
