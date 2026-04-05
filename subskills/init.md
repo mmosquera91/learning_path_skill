@@ -1,0 +1,200 @@
+# Subskill: Init — Generate and Activate a Learning Path
+
+## Trigger
+User sends: `/tutor init <topic>` or "quiero aprender <topic>"
+
+## Steps
+
+### 0. Ensure database exists
+```bash
+python3 ~/.hermes/skills/learning-path/scripts/init_db.py
+```
+This is idempotent — safe to run every time. It creates the DB if missing, skips if already initialized.
+
+### 1. Check for existing active path
+```bash
+python3 -c "
+import sqlite3, os
+db = os.path.expanduser('~/.hermes/skills/learning-path/learning.db')
+conn = sqlite3.connect(db)
+c = conn.cursor()
+c.execute('SELECT value FROM config WHERE key=\"active_path_id\"')
+row = c.fetchone()
+if row and row[0]:
+    c.execute('SELECT topic, status FROM paths WHERE id=?', (row[0],))
+    p = c.fetchone()
+    print(f'ACTIVE_PATH: {p[0]} (status: {p[1]})')
+else:
+    print('NO_ACTIVE_PATH')
+conn.close()
+"
+```
+If there's already an active path, ask the user: "You already have an active path: {topic}. Do you want to /tutor pause it first and create a new one?"
+
+### 2. Research phase — gather real resources
+Before generating the syllabus, research the topic to find real, specific learning resources. Use `delegate_task` with `web_search`:
+
+**Search strategy (run in parallel if possible):**
+1. `"{topic} course syllabus modules curriculum"` — find typical module structure
+2. `"{topic} lessons tutorial site:coursera.org OR site:edx.org OR site:khanacademy.org OR site:freecodecamp.org"` — find specific lesson URLs
+3. `"{topic} tutorial beginner site:youtube.com"` — find specific video URLs (check channel credibility)
+4. `"{topic} exercises practice problems"` — find interactive exercises
+5. `"{topic} documentation official guide"` — find official docs
+
+**For each result, capture:**
+- Exact URL (must include specific path, not just homepage)
+- Title of the lesson/course/module from the search result
+- Source domain (prioritize trusted domains per rules below)
+
+**TRUSTED SOURCE RULES (strictly enforce):**
+1. Only use URLs from well-established, reputable domains. Preferred:
+   - Official docs: docs.python.org, developer.mozilla.org, docs.rust-lang.org, docs.microsoft.com, docs.aws.amazon.com, kubernetes.io/docs, reactjs.org/docs, etc.
+   - Learning platforms: coursera.org, edx.org, freecodecamp.org, khanacademy.org, MIT OpenCourseWare (ocw.mit.edu), Stanford Online (online.stanford.edu), chess.com/lessons (specific paths only)
+   - Video: youtube.com (official channels or well-known educators only)
+   - Reference: wikipedia.org (overviews only), arxiv.org (research topics)
+   - Community: stackoverflow.com, github.com (official repos only)
+2. **URLs MUST be specific** — reject generic URLs like `chess.com/lessons` or `khanacademy.org/math`. Require lesson-specific paths like `chess.com/lessons/attacks-and-defenses` or `khanacademy.org/math/algebra/x2f8bb11595b61c86:quadratics`
+3. Do NOT fabricate URLs. Only use URLs found in search results.
+4. Do NOT use personal blogs, random Medium posts, or unknown domains.
+
+Store the research results in a structured format for the next step.
+
+### 3. Generate the syllabus
+Use the LLM to generate a structured learning path, **incorporating the research results from Step 2**. Prompt:
+
+```
+Generate a structured learning syllabus for: {topic}
+
+Use the following research results to build the syllabus. These are REAL resources found on the web:
+---
+{research_results}
+---
+
+Requirements:
+- 8-15 modules, ordered from foundational to advanced
+- Each module has: title, description (2-3 sentences), estimated time to complete
+- Include 3-4 resources per module, selected ONLY from the research results above
+- Each resource MUST use the exact URL from research (do not modify URLs)
+- Resource types: doc, video, exercise, article
+- Mark 3-4 milestones (key checkpoint modules)
+- Estimate total duration in weeks
+- Language: match the user's language
+- Map each module to specific, relevant resources — avoid generic URLs
+
+Example of good resource selection:
+- Module "Ataques y Defensas" → chess.com/lessons/attacks-and-defenses (specific lesson)
+- NOT chess.com/lessons (generic homepage)
+
+Output as valid JSON:
+{
+  "topic": "...",
+  "description": "...",
+  "estimated_duration": "...",
+  "modules": [
+    {
+      "title": "...",
+      "description": "...",
+      "estimated_time": "...",
+      "resources": [
+        {"url": "...", "title": "...", "type": "doc|video|exercise|article"}
+      ],
+      "is_milestone": false
+    }
+  ]
+}
+```
+
+### 4. Validate resources (Fase 2+)
+For each URL in the generated syllabus:
+- Try a HEAD request using `terminal`: `curl -sI -o /dev/null -w "%{http_code}" --max-time 10 "<URL>"`
+- If status 200-399: mark as `verified='ok'`
+- If timeout or 404+: mark as `verified='unverified'`
+- Collect list of unverified URLs
+
+### 5. Present syllabus for review
+Format the syllabus using templates/syllabus.md and send to the user via Telegram.
+
+For each module, render its study sources using the format defined in the template:
+- Show the resource title as a clickable link
+- Show the resource type (doc, video, exercise, article)
+- Show ✅ for verified URLs or ⚠️ for unverified ones
+
+This ensures the user can review BOTH the structure of the path AND the specific sources before confirming.
+
+If there are unverified resources, add a note at the end:
+```
+⚠️ Estas fuentes no pudieron verificarse automáticamente:
+{unverified_list}
+Puedes continuar igual — las fuentes son complementarias y puedes reemplazarlas con /edit.
+```
+
+### 6. Wait for user confirmation
+- User sends `/confirm` → proceed to step 7
+- User sends `/edit <feedback>` → regenerate syllabus incorporating feedback, go back to step 5
+- If user is silent for 24h, the unconfirmed path auto-stays as draft
+
+### 7. Save to SQLite and activate
+```python
+import sqlite3, os, json
+from datetime import datetime, timezone
+
+db = os.path.expanduser('~/.hermes/skills/learning-path/learning.db')
+conn = sqlite3.connect(db)
+conn.execute("PRAGMA foreign_keys=ON")
+c = conn.cursor()
+
+# Insert path
+now = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
+c.execute('INSERT INTO paths (topic, status, is_active, confirmed, created) VALUES (?, ?, 1, 1, ?)',
+          (syllabus["topic"], "active", now))
+path_id = c.lastrowid
+
+# Insert modules and resources
+for i, mod in enumerate(syllabus["modules"]):
+    c.execute('''INSERT INTO modules (path_id, title, description, module_order, status)
+                 VALUES (?, ?, ?, ?, 'pending')''',
+              (path_id, mod["title"], mod["description"], i+1))
+    mod_id = c.lastrowid
+    for res in mod.get("resources", []):
+        c.execute('''INSERT INTO resources (module_id, url, title, type, verified)
+                     VALUES (?, ?, ?, ?, ?)''',
+                  (mod_id, res["url"], res["title"], res["type"], res.get("verified", "pending")))
+
+# Set as active
+c.execute('UPDATE config SET value=? WHERE key="active_path_id"', (str(path_id),))
+conn.commit()
+conn.close()
+```
+
+### 8. Create cron jobs (if they don't exist)
+Before creating cron jobs, check existing ones to avoid duplicates:
+
+```python
+# Use cronjob(action="list") to check for existing jobs
+# Look for jobs with names: "learning-path-daily" and "learning-path-weekly"
+# If a job with matching name already exists → skip it, do NOT create a duplicate
+# If no matching name found → create it using cronjob(action="create")
+```
+
+Rules:
+- **Always check by name** (`learning-path-daily`, `learning-path-weekly`) before creating.
+- If a cron with that name exists (even if paused or with different schedule), do NOT create another.
+- Only create missing cron jobs. Report which ones already existed vs. were created.
+
+Daily cron: schedule `0 9 * * *`, deliver `telegram`, skill `learning-path`
+Weekly cron: schedule `0 22 * * 0`, deliver `telegram`, skill `learning-path`
+
+The prompt for each must contain the FULL content of the corresponding subskill (`daily.md` or `adapt.md`) inlined — cron sessions have zero context.
+
+### 9. Send confirmation message
+```
+✅ Learning path activated: {topic}
+📚 {N} modules loaded
+🎯 First module: {first_module_title}
+Type /tutor status anytime to check progress.
+```
+
+## Error Handling
+- If LLM generates invalid JSON: retry once with explicit "return valid JSON only"
+- If DB write fails: report error to user, do NOT leave partial state
+- If init_db.py hasn't been run: run it first, then proceed
