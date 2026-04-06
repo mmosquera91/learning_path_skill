@@ -52,3 +52,4 @@ score = (CC + AA) / 2
 - Feedback must be actionable, not generic ("good job" is not feedback)
 - If the response is too short to evaluate properly, ask for elaboration instead of giving a low score
 - Always respond in the user's language
+- **Proportional scoring:** Don't penalize heavily for a single minor conceptual imprecision when all practical application is correct. A wrong term in an explanatory note should cost 0.5-1 point, not 3+. Score Application (what they can DO) independently from Comprehension (how they explain it). If code runs perfectly and tasks are completed, Application should be 7+ minimum.

@@ -28,9 +28,9 @@ Tutor: 📚 Syllabus: Python (12 modules, ~6 weeks)
        12. File I/O & Error Handling
        
        36 resources found. 28 verified OK, 8 unverified.
-       Reply /confirm to activate or /edit [feedback] to modify.
+       Reply /tutor confirm to activate or /tutor edit [feedback] to modify.
 
-You: /confirm
+You: /tutor confirm
 
 Tutor: ✅ Learning path activated: Python
        📚 12 modules loaded
@@ -48,9 +48,9 @@ Tutor: 📚 Daily Task — Variables & Data Types
        3. Print your height in cm
        4. Use type() to verify each variable's type
        
-       Reply /submit <your answer> when done.
+       Reply /tutor submit <your answer> when done.
 
-You: /submit 
+You: /tutor submit 
      name = "Sarah"
      age = 27
      height = 1.65
@@ -82,7 +82,7 @@ Tutor: 📋 Evaluation — Variables & Data Types
 ## Architecture
 
 ```
-~/.hermes/skills/learning-path/
+~/.hermes/skills/tutor/
 ├── SKILL.md                  # Router + persona + command dispatch
 ├── subskills/
 │   ├── init.md               # Syllabus generation, URL validation, confirmation flow
@@ -106,9 +106,9 @@ Tutor: 📋 Evaluation — Variables & Data Types
 | Command | Description |
 |---------|-------------|
 | `/tutor init <topic>` | Generate a syllabus for the given topic |
-| `/confirm` | Activate the pending syllabus |
-| `/edit <feedback>` | Regenerate syllabus with modifications |
-| `/submit <response>` | Submit your answer for evaluation |
+| `/tutor confirm` | Activate the pending syllabus |
+| `/tutor edit <feedback>` | Regenerate syllabus with modifications |
+| `/tutor submit <response>` | Submit your answer for evaluation |
 | `/tutor status` | Show current progress, module, score |
 | `/tutor skip` | Skip today's task (no penalty) |
 | `/tutor pause` | Pause the active learning path |
@@ -133,7 +133,7 @@ hermes skills install git+https://github.com/mmosquera91/learning_path_skill.git
 
 Or manually:
 ```bash
-git clone https://github.com/mmosquera91/learning_path_skill.git ~/.hermes/skills/learning-path
+git clone https://github.com/mmosquera91/learning_path_skill.git ~/.hermes/skills/tutor
 ```
 
 Then start with:
@@ -149,7 +149,7 @@ Cron jobs are created **automatically** when you run `/confirm` after `/tutor in
 
 If you ever need to recreate them (e.g., after a reset), ask your agent:
 
-> "Create the cron jobs for the learning-path skill: daily at 9 AM and weekly review Sundays at 10 PM, deliver to telegram."
+> "Create the cron jobs for the tutor skill: daily at 9 AM and weekly review Sundays at 10 PM, deliver to telegram."
 
 The agent will call the `cronjob` tool with the full self-contained prompts from `subskills/daily.md` and `subskills/adapt.md`. Those prompts include all SQL queries and step-by-step logic — no prior session context needed.
 

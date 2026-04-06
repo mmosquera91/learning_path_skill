@@ -97,14 +97,23 @@ UPDATE modules SET status = 'pending', score = NULL WHERE id = {module_id};
 ```
 
 ### 6. Save evaluation to task
-```sql
-UPDATE daily_tasks SET
-  response = '{user_response_escaped}',
-  feedback = '{feedback_escaped}',
-  score = {score},
-  awaiting_response = 0
-WHERE id = {task_id};
+
+**CRITICAL: Never use inline SQL for saving user responses or feedback.**
+Student responses often contain Python code (f-strings with `{}`, quotes, backslashes) that breaks SQL escaping.
+Always write a temp Python script with parameterized queries:
+
+```python
+# /tmp/save_eval.py
+import sqlite3
+conn = sqlite3.connect(db_path)
+c = conn.cursor()
+c.execute("UPDATE daily_tasks SET response=?, feedback=?, score=?, awaiting_response=0 WHERE id=?",
+          (user_response, feedback, score, task_id))
+conn.commit()
+conn.close()
 ```
+
+For module status updates (step 5), inline SQL is fine since those use only numbers/dates.
 
 ### 7. Update config
 ```sql
@@ -143,6 +152,8 @@ If the user disagrees with their score after receiving feedback:
 5. **If no concrete error,** acknowledge their feeling but stand by the evaluation: "I understand the score feels low. Based on the rubric, [specific reason]. If you'd like to try again with a new task, I'll generate one for next session."
 
 This keeps evaluations consistent and prevents score inflation from negotiation.
+
+**Proportional scoring rule:** A single conceptual imprecision in an otherwise correct response should NOT drop the score by more than 1-2 points. If the code works, corrections are right, and only one explanation is slightly off, the score should reflect that overall competence. Don't penalize one mistake across multiple rubric axes.
 
 ### 10. Check adaptation triggers (Fase 3)
 After saving evaluation, check:

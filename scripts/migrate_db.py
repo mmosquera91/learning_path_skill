@@ -12,7 +12,7 @@ import sqlite3
 import os
 import sys
 
-DB_PATH = os.path.expanduser("~/.hermes/skills/learning-path/learning.db")
+DB_PATH = os.path.expanduser("~/.hermes/skills/tutor/learning.db")
 
 EXPECTED_VERSION = 1
 

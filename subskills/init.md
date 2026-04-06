@@ -7,7 +7,7 @@ User sends: `/tutor init <topic>` or "quiero aprender <topic>"
 
 ### 0. Ensure database exists
 ```bash
-python3 ~/.hermes/skills/learning-path/scripts/init_db.py
+python3 ~/.hermes/skills/tutor/scripts/init_db.py
 ```
 This is idempotent — safe to run every time. It creates the DB if missing, skips if already initialized.
 
@@ -15,7 +15,7 @@ This is idempotent — safe to run every time. It creates the DB if missing, ski
 ```bash
 python3 -c "
 import sqlite3, os
-db = os.path.expanduser('~/.hermes/skills/learning-path/learning.db')
+db = os.path.expanduser('~/.hermes/skills/tutor/learning.db')
 conn = sqlite3.connect(db)
 c = conn.cursor()
 c.execute('SELECT value FROM config WHERE key=\"active_path_id\"')
@@ -95,7 +95,7 @@ You can proceed anyway — resources are supplementary.
 import sqlite3, os, json
 from datetime import datetime, timezone
 
-db = os.path.expanduser('~/.hermes/skills/learning-path/learning.db')
+db = os.path.expanduser('~/.hermes/skills/tutor/learning.db')
 conn = sqlite3.connect(db)
 conn.execute("PRAGMA foreign_keys=ON")
 c = conn.cursor()
@@ -128,18 +128,18 @@ Before creating cron jobs, check existing ones to avoid duplicates:
 
 ```python
 # Use cronjob(action="list") to check for existing jobs
-# Look for jobs with names: "learning-path-daily" and "learning-path-weekly"
+# Look for jobs with names: "tutor-daily" and "tutor-weekly"
 # If a job with matching name already exists → skip it, do NOT create a duplicate
 # If no matching name found → create it using cronjob(action="create")
 ```
 
 Rules:
-- **Always check by name** (`learning-path-daily`, `learning-path-weekly`) before creating.
+- **Always check by name** (`tutor-daily`, `tutor-weekly`) before creating.
 - If a cron with that name exists (even if paused or with different schedule), do NOT create another.
 - Only create missing cron jobs. Report which ones already existed vs. were created.
 
-Daily cron: schedule `0 9 * * *`, deliver `telegram`, skill `learning-path`
-Weekly cron: schedule `0 22 * * 0`, deliver `telegram`, skill `learning-path`
+Daily cron: schedule `0 9 * * *`, deliver `telegram`, skill `tutor`
+Weekly cron: schedule `0 22 * * 0`, deliver `telegram`, skill `tutor`
 
 The prompt for each must contain the FULL content of the corresponding subskill (`daily.md` or `adapt.md`) inlined — cron sessions have zero context.
 

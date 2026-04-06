@@ -13,7 +13,7 @@ python3 -c "
 import sqlite3, os, json
 from datetime import datetime, timezone, timedelta
 
-db = os.path.expanduser('~/.hermes/skills/learning-path/learning.db')
+db = os.path.expanduser('~/.hermes/skills/tutor/learning.db')
 conn = sqlite3.connect(db)
 conn.execute('PRAGMA foreign_keys=ON')
 c = conn.cursor()
