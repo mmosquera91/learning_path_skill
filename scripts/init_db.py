@@ -4,14 +4,14 @@
 Usage:
     python3 init_db.py [--db PATH]
 
-Default DB: ~/.hermes/skills/learning-path/learning.db
+Default DB: ~/.hermes/skills/tutor/learning.db
 """
 
 import sqlite3
 import os
 import sys
 
-DB_PATH = os.path.expanduser("~/.hermes/skills/learning-path/learning.db")
+DB_PATH = os.path.expanduser("~/.hermes/skills/tutor/learning.db")
 
 SCHEMA_VERSION = 1
 

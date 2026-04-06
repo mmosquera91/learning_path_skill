@@ -12,6 +12,8 @@ The entire state machine lives in a single SQLite file. Cron jobs run with zero 
 
 **Stack:** Hermes Agent + SQLite (WAL mode) + Telegram delivery + cron tool
 
+> **v1.1 rename note (2026-04-06):** The skill was renamed from `learning-path` to `tutor`. This aligns with Hermes v0.7 where `/tutor` is the only slash command that auto-registers (derived from the skill name). Sub-commands like `submit`, `confirm`, `edit` are now `/tutor submit`, `/tutor confirm`, `/tutor edit` — consistent with the `/tutor <subcommand>` pattern. All paths, cron prompts, and internal references updated. DB data is preserved.
+
 ---
 
 ## 2. Architecture Decisions
@@ -33,7 +35,7 @@ These are the non-obvious choices that shaped the skill. Understanding them prev
 ## 3. File Structure with Responsibilities
 
 ```
-~/.hermes/skills/learning-path/
+~/.hermes/skills/tutor/
 ├── SKILL.md                  # Router — persona, rules, command dispatch, pitfalls
 ├── AGENTS.md                 # This file — builder's guide
 ├── README.md                 # User-facing documentation
@@ -77,7 +79,7 @@ These are the non-obvious choices that shaped the skill. Understanding them prev
 
 ## 4. State Model
 
-Everything lives in SQLite at `~/.hermes/skills/learning-path/learning.db`.
+Everything lives in SQLite at `~/.hermes/skills/tutor/learning.db`.
 
 ### Tables
 
@@ -133,7 +135,7 @@ Hermes cron jobs invoke a new agent session. The only input is the `prompt` fiel
 - The prompt must be fully self-contained
 - All SQL queries must be written out in the prompt
 - All decision branches must be explicit
-- The agent must call `skill_view("learning-path")` or have the logic inlined
+- The agent must call `skill_view("tutor")` or have the logic inlined
 
 In practice, the cron prompts include the full subskill content (daily.md or adapt.md) directly in the prompt text.
 
@@ -163,7 +165,7 @@ In practice, the cron prompts include the full subskill content (daily.md or ada
 Cron jobs are created automatically during the `/confirm` step of `init.md`. The agent calls `cronjob(action="create")` with the full prompt. You should NOT try to create them via `hermes cron create` in the CLI — the prompts are ~500 lines each and the CLI isn't practical for that.
 
 If cron jobs need to be recreated, ask the agent in a chat session:
-> "Create the cron jobs for the learning-path skill: daily at 9 AM and weekly review Sundays at 10 PM, deliver to telegram."
+> "Create the cron jobs for the tutor skill: daily at 9 AM and weekly review Sundays at 10 PM, deliver to telegram."
 
 ---
 
@@ -251,7 +253,7 @@ If JSON parsing fails, retry once. If it fails again, ask the user to resubmit a
      ```
 3. **Update `init_db.py` SCHEMA** to include the new column for fresh installs
 4. **Update `SCHEMA_VERSION` in `init_db.py` to match `EXPECTED_VERSION`**
-5. **Run migration:** `python3 ~/.hermes/skills/learning-path/scripts/migrate_db.py`
+5. **Run migration:** `python3 ~/.hermes/skills/tutor/scripts/migrate_db.py`
 6. **Update all subskills** that reference the affected table
 
 ### Adding a New Command
@@ -271,7 +273,7 @@ Cron prompts are the full text of a subskill file. When you modify `daily.md` or
 2. The existing cron jobs still have the OLD prompt — they are NOT auto-updated
 3. Delete old cron jobs and recreate them:
    ```
-   Ask the agent: "Recreate the learning-path cron jobs with the updated prompts."
+   Ask the agent: "Recreate the tutor cron jobs with the updated prompts."
    ```
 4. Verify with `cronjob(action="list")` that the new prompts are active
 

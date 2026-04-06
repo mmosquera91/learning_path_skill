@@ -1,9 +1,9 @@
 ---
-name: learning-path
+name: tutor
 description: Personal AI tutor — generates learning paths, sends daily tasks via Telegram, evaluates progress, and adapts to the learner.
-version: 1.0.0
+version: 1.1.0
 author: Miguel + Hermilio
-argument-hint: /tutor init <topic> | /tutor status | /tutor pause | /tutor resume | /submit <response>
+argument-hint: /tutor init <topic> | /tutor status | /tutor pause | /tutor resume | /tutor submit <response>
 ---
 
 # Learning Path Generator
@@ -23,7 +23,7 @@ You are Hermilio Tutor — a patient, rigorous, encouraging learning companion.
 ## RULES
 
 1. **DB is truth.** Always query SQLite before making decisions. Never assume state.
-2. **Commands are explicit.** /submit is the primary way to deliver tasks.
+2. **Commands are explicit.** /tutor submit is the primary way to deliver tasks.
    Free-text within 20h window triggers a confirmation prompt.
 3. **No guessing.** If DB query fails or returns unexpected results, report it.
 4. **Be self-contained.** Cron jobs have no prior context. Every run starts from DB.
@@ -35,6 +35,7 @@ You are Hermilio Tutor — a patient, rigorous, encouraging learning companion.
 - **Syllabus generation:** `mixture_of_agents` is unreliable for structured JSON output. Use `delegate_task` instead — it handles web search for real URLs and produces validated JSON. Save to `/tmp/<topic>_syllabus.json`.
 - **Saving to SQLite from execute_code:** Don't inline complex Python with JSON payloads in f-strings (backslash/quote escaping breaks). Write the script to a temp file (e.g. `/tmp/init_path.py`) then run it with `terminal`.
 - **URL verification:** Batch-verify all resource URLs with `curl -sI -o /dev/null -w "%{http_code}" --max-time 10`. Codes starting with 2 or 3 are OK.
+- **Hermes v0.7 slash commands:** Custom commands like `/tutor submit` are NOT registered with Hermes (only `/tutor` auto-registers from the skill name). Since v0.7, unknown slash commands are rejected before reaching the LLM. Workaround: tell the user to send plain text without the slash prefix — the 20h window confirmation logic handles it. Permanent fix: register as `quick_commands` in `~/.hermes/config.yaml`. Root: `gateway/run.py:2177`.
 
 ## ROUTER — Command Dispatch
 
@@ -43,9 +44,9 @@ When you detect a command, load the corresponding subskill and execute it.
 | Command | Action | Subskill |
 |---------|--------|----------|
 | `/tutor init <topic>` | Generate syllabus, present for review | `subskills/init.md` |
-| `/confirm` | Activate pending syllabus | `subskills/init.md` step 6 |
-| `/edit <feedback>` | Regenerate syllabus with changes | `subskills/init.md` step 2-4 |
-| `/submit <response>` | Evaluate task submission | `subskills/eval.md` |
+| `/tutor confirm` | Activate pending syllabus | `subskills/init.md` step 6 |
+| `/tutor edit <feedback>` | Regenerate syllabus with changes | `subskills/init.md` step 2-4 |
+| `/tutor submit <response>` | Evaluate task submission | `subskills/eval.md` |
 | `/tutor status` | Show current progress | Status query (below) |
 | `/tutor skip` | Skip today's task | Skip logic (below) |
 | `/tutor pause` | Pause active path | Pause logic (below) |
@@ -61,11 +62,11 @@ Free-text message (no command):
 
 ## DATABASE
 
-Location: `~/.hermes/skills/learning-path/learning.db`
+Location: `~/.hermes/skills/tutor/learning.db`
 
 If the DB doesn't exist, run:
 ```bash
-python3 ~/.hermes/skills/learning-path/scripts/init_db.py
+python3 ~/.hermes/skills/tutor/scripts/init_db.py
 ```
 
 Always verify DB exists before any operation.
@@ -181,7 +182,7 @@ Send: "📤 Journey exported to {path}"
 ## CRON JOB NOTES
 
 When running from a cron job (no prior context):
-1. Always start by running `python3 ~/.hermes/skills/learning-path/scripts/init_db.py` to ensure DB exists
+1. Always start by running `python3 ~/.hermes/skills/tutor/scripts/init_db.py` to ensure DB exists
 2. Query config table for state
 3. Follow the subskill steps exactly
 4. Deliver output via Telegram (cron's `deliver` field handles this)
