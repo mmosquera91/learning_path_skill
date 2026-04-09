@@ -31,20 +31,84 @@ conn.close()
 ```
 If there's already an active path, ask the user: "You already have an active path: {topic}. Do you want to /tutor pause it first and create a new one?"
 
-### 2. Generate the syllabus
-Use the LLM to generate a structured learning path. Prompt:
+### 2. Research phase — gather real resources
+Before generating the syllabus, research the topic to find real, specific learning resources. Use `delegate_task` with `web_search`:
 
+**Search strategy (run in parallel if possible):**
+1. `"{topic} course syllabus modules curriculum"` — find typical module structure
+2. `"{topic} lessons tutorial site:coursera.org OR site:edx.org OR site:khanacademy.org OR site:freecodecamp.org"` — find specific lesson URLs
+3. `"{topic} tutorial beginner site:youtube.com"` — find specific video URLs (check channel credibility)
+4. `"{topic} exercises practice problems"` — find interactive exercises
+5. `"{topic} documentation official guide"` — find official docs
+
+**For each result, capture:**
+- Exact URL (must include specific path, not just homepage)
+- Title of the lesson/course/module from the search result
+- Source domain (prioritize trusted domains per rules below)
+
+**TRUSTED SOURCE RULES (strictly enforce):**
+
+**TIER SYSTEM (prioritize by reliability):**
+- **TIER 1 (⭐⭐⭐⭐⭐):** Interactive learning platforms with exercises/lessons — ALWAYS prioritize these, minimum 50% of resources
+- **TIER 2 (⭐⭐⭐⭐):** Official docs, established courses (coursera, edx, khanacademy) — max 2 per module
+- **TIER 3 (⭐⭐):** YouTube single videos ONLY — max 1 per module, NO PLAYLISTS
+- **TIER 4 (⭐⭐):** Reference materials — max 1 per module
+
+**CRITICAL URL RULES:**
+1. **NO YOUTUBE PLAYLISTS:** Reject ANY URL with `&list=` or `playlist?` — these break when videos change
+2. **URLs MUST be specific** — reject generic paths like `/tutorials` or `/courses`
+3. **TIER 1 pattern examples by topic:**
+   - Programming: `exercism.org/tracks/*`, `codecademy.com/learn/*`, `leetcode.com/studyplan/*`
+   - Languages: `duolingo.com/lesson/*`, `babbel.com/learn/*`
+   - Chess: `chess.com/lessons/<lesson-slug>`, `lichess.org/learn#/<number>`
+   - Math: `khanacademy.org/<subject>/*`, `brilliant.org/courses/*`
+4. Do NOT fabricate URLs — only use URLs from search results
+5. Do NOT use personal blogs or unknown domains
+
+Store the research results in a structured format for the next step.
+
+### 3. Generate the syllabus
+Use the LLM to generate a structured learning path, **incorporating the research results from Step 2**. 
+
+**CRITICAL: Follow TIER system when selecting resources:**
+- TIER 1 (⭐⭐⭐⭐⭐): Interactive platforms with exercises/lessons — MINIMUM 50% of resources
+- TIER 2 (⭐⭐⭐⭐): Official courses (coursera, edx, khanacademy) — max 2 per module  
+- TIER 3 (⭐⭐): YouTube SINGLE VIDEOS only — max 1 per module
+- NEVER include YouTube playlists (URLs with `&list=`)
+
+**Priority order for TIER 1 sources (adapt to topic):**
+- Programming: exercism.org, codecademy.com, leetcode.com study plans, official language tutorials
+- Languages: duolingo.com, babbel.com, busuu.com
+- Chess: chess.com/lessons, lichess.org/learn
+- Math/Science: khanacademy.org, brilliant.org/courses
+- Music: musictheory.net/lessons, teoria.com
+
+Prompt:
 ```
 Generate a structured learning syllabus for: {topic}
+
+Use the following research results to build the syllabus. These are REAL resources found on the web:
+---
+{research_results}
+---
 
 Requirements:
 - 8-15 modules, ordered from foundational to advanced
 - Each module has: title, description (2-3 sentences), estimated time to complete
-- Include 2-3 resources per module (real, well-known URLs when possible)
+- Include 3-4 resources per module, selected ONLY from the research results above
+- PRIORITY ORDER for resource selection (follow strictly):
+  1. Interactive platforms with exercises (TIER 1 - most preferred)
+  2. Official courses: coursera.org/learn/*, edx.org/learn/*, khanacademy.org/* (TIER 2)
+  3. YouTube single videos ONLY if no better option (TIER 3)
+- REJECT: YouTube playlists (any URL with &list= parameter)
+- REJECT: Generic homepage URLs
+- Each resource MUST use the exact URL from research
 - Resource types: doc, video, exercise, article
 - Mark 3-4 milestones (key checkpoint modules)
 - Estimate total duration in weeks
 - Language: match the user's language
+
+TIER BALANCE CHECK: Each module must have at least 50% TIER 1 resources.
 
 Output as valid JSON:
 {
@@ -63,34 +127,70 @@ Output as valid JSON:
     }
   ]
 }
-
-IMPORTANT: Only include real, well-known URLs. Do not fabricate links.
-For each resource, prefer official documentation, established tutorials, or well-known platforms.
 ```
 
-### 3. Validate resources (Fase 2+)
-For each URL in the generated syllabus:
-- Try a HEAD request using `terminal`: `curl -sI -o /dev/null -w "%{http_code}" --max-time 10 "<URL>"`
-- If status 200-399: mark as `verified='ok'`
-- If timeout or 404+: mark as `verified='unverified'`
-- Collect list of unverified URLs
+### 4. Validate resources
 
-### 4. Present syllabus for review
+**STEP 4A: Run validation script**
+Save syllabus to temp file and run validator:
+```bash
+python3 ~/.hermes/skills/tutor/scripts/validate_urls.py --http < /tmp/syllabus.json
+```
+
+This checks:
+- URL pattern matches trusted sources (TIER 1-4)
+- NO YouTube playlists (rejects `&list=`)
+- HTTP status for TIER 1-2 URLs
+- Balance: min 50% TIER 1 per module
+
+**STEP 4B: Review validation output**
+The script outputs:
+```
+TIER 1 (⭐⭐⭐⭐⭐ Interactive): 24
+TIER 2 (⭐⭐⭐⭐ Official): 8
+TIER 3 (⭐⭐ YouTube): 4
+INVALID: 2
+
+✅ Module Name (TIER 1: 60%)
+❌ Bad Module (TIER 1: 25%) — Needs more interactive resources
+   ❌ INVALID: https://youtube.com/playlist?...
+      Reason: YouTube PLAYLIST - not allowed
+```
+
+**STEP 4C: Fix or regenerate**
+- If INVALID URLs found: Remove them or find alternatives
+- If TIER 1 < 50%: Add more interactive platform resources
+- If YouTube playlists found: Replace with single video URLs
+- Re-run validation until all modules pass
+
+**Quick URL check (single URL):**
+```bash
+python3 ~/.hermes/skills/tutor/scripts/validate_urls.py --check "https://..."
+```
+
+### 5. Present syllabus for review
 Format the syllabus using templates/syllabus.md and send to the user via Telegram.
 
-If there are unverified resources, add a note:
+For each module, render its study sources using the format defined in the template:
+- Show the resource title as a clickable link
+- Show the resource type (doc, video, exercise, article)
+- Show ✅ for verified URLs or ⚠️ for unverified ones
+
+This ensures the user can review BOTH the structure of the path AND the specific sources before confirming.
+
+If there are unverified resources, add a note at the end:
 ```
-⚠️ These resources could not be verified:
+⚠️ Estas fuentes no pudieron verificarse automáticamente:
 {unverified_list}
-You can proceed anyway — resources are supplementary.
+Puedes continuar igual — las fuentes son complementarias y puedes reemplazarlas con /tutor edit.
 ```
 
-### 5. Wait for user confirmation
-- User sends `/confirm` → proceed to step 6
-- User sends `/edit <feedback>` → regenerate syllabus incorporating feedback, go back to step 4
+### 6. Wait for user confirmation
+- User sends `/tutor confirm` → proceed to step 7
+- User sends `/tutor edit <feedback>` → regenerate syllabus incorporating feedback, go back to step 5
 - If user is silent for 24h, the unconfirmed path auto-stays as draft
 
-### 6. Save to SQLite and activate
+### 7. Save to SQLite and activate
 ```python
 import sqlite3, os, json
 from datetime import datetime, timezone
@@ -123,7 +223,7 @@ conn.commit()
 conn.close()
 ```
 
-### 7. Create cron jobs (if they don't exist)
+### 8. Create cron jobs (if they don't exist)
 Before creating cron jobs, check existing ones to avoid duplicates:
 
 ```python
@@ -143,7 +243,7 @@ Weekly cron: schedule `0 22 * * 0`, deliver `telegram`, skill `tutor`
 
 The prompt for each must contain the FULL content of the corresponding subskill (`daily.md` or `adapt.md`) inlined — cron sessions have zero context.
 
-### 8. Send confirmation message
+### 9. Send confirmation message
 ```
 ✅ Learning path activated: {topic}
 📚 {N} modules loaded

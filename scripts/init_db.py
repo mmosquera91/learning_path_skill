@@ -1,130 +1,102 @@
 #!/usr/bin/env python3
-"""Initialize the Learning Path Generator SQLite database.
-
-Usage:
-    python3 init_db.py [--db PATH]
-
-Default DB: ~/.hermes/skills/tutor/learning.db
 """
-
+Initialize the learning path database.
+Idempotent - safe to run multiple times.
+"""
 import sqlite3
 import os
-import sys
+from pathlib import Path
 
-DB_PATH = os.path.expanduser("~/.hermes/skills/tutor/learning.db")
+def init_db():
+    db_dir = Path.home() / ".hermes" / "skills" / "tutor"
+    db_dir.mkdir(parents=True, exist_ok=True)
+    db_path = db_dir / "learning.db"
 
-SCHEMA_VERSION = 1
-
-SCHEMA = """
--- Schema version tracking
-CREATE TABLE IF NOT EXISTS schema_version (
-    version INTEGER NOT NULL
-);
-
--- Global config (key-value store for runtime state)
-CREATE TABLE IF NOT EXISTS config (
-    key   TEXT PRIMARY KEY,
-    value TEXT
-);
-
--- Learning paths (one per topic)
-CREATE TABLE IF NOT EXISTS paths (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    topic       TEXT NOT NULL,
-    status      TEXT DEFAULT 'active',
-    is_active   INTEGER DEFAULT 1,
-    confirmed   INTEGER DEFAULT 0,
-    created     TEXT,
-    completed   TEXT
-);
-
--- Modules within a path
-CREATE TABLE IF NOT EXISTS modules (
-    id               INTEGER PRIMARY KEY AUTOINCREMENT,
-    path_id          INTEGER REFERENCES paths(id) ON DELETE CASCADE,
-    title            TEXT NOT NULL,
-    description      TEXT,
-    module_order     INTEGER,
-    status           TEXT DEFAULT 'pending',
-    score            REAL,
-    score_avg        REAL,
-    next_review_date TEXT,
-    times_repeated   INTEGER DEFAULT 0,
-    started          TEXT,
-    completed        TEXT
-);
-
--- Daily tasks / assignments
-CREATE TABLE IF NOT EXISTS daily_tasks (
-    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
-    module_id           INTEGER REFERENCES modules(id) ON DELETE CASCADE,
-    date                TEXT,
-    content             TEXT,
-    response            TEXT,
-    feedback            TEXT,
-    score               REAL,
-    awaiting_response   INTEGER DEFAULT 1,
-    response_window_end TEXT,
-    skipped             INTEGER DEFAULT 0
-);
-
--- Learning resources per module
-CREATE TABLE IF NOT EXISTS resources (
-    id        INTEGER PRIMARY KEY AUTOINCREMENT,
-    module_id INTEGER REFERENCES modules(id) ON DELETE CASCADE,
-    url       TEXT,
-    title     TEXT,
-    type      TEXT,
-    verified  TEXT DEFAULT 'pending'
-);
-
--- Initial config defaults
-INSERT OR IGNORE INTO config (key, value) VALUES ('active_path_id', '');
-INSERT OR IGNORE INTO config (key, value) VALUES ('pending_task_id', '');
-INSERT OR IGNORE INTO config (key, value) VALUES ('last_task_date', '');
-INSERT OR IGNORE INTO config (key, value) VALUES ('last_response_date', '');
-INSERT OR IGNORE INTO config (key, value) VALUES ('daily_count', '0');
-INSERT OR IGNORE INTO config (key, value) VALUES ('weekly_count', '0');
-"""
-
-
-def init_db(db_path: str = DB_PATH):
-    """Create or verify the database."""
-    os.makedirs(os.path.dirname(db_path), exist_ok=True)
-
-    conn = sqlite3.connect(db_path)
-    conn.execute("PRAGMA journal_mode=WAL")
+    conn = sqlite3.connect(str(db_path))
     conn.execute("PRAGMA foreign_keys=ON")
+    c = conn.cursor()
 
-    cursor = conn.cursor()
+    # Config table for state management
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS config (
+            key TEXT PRIMARY KEY,
+            value TEXT
+        )
+    ''')
 
-    # Check if already initialized
-    cursor.execute(
-        "SELECT name FROM sqlite_master WHERE type='table' AND name='schema_version'"
-    )
-    if cursor.fetchone():
-        print(f"DB already exists at {db_path}")
-        cursor.execute("SELECT version FROM schema_version")
-        row = cursor.fetchone()
-        current = row[0] if row else 0
-        print(f"Schema version: {current}")
-        conn.close()
-        return
+    # Learning paths
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS paths (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            topic TEXT NOT NULL,
+            description TEXT,
+            status TEXT DEFAULT 'draft',
+            is_active INTEGER DEFAULT 0,
+            confirmed INTEGER DEFAULT 0,
+            created TEXT,
+            completed TEXT
+        )
+    ''')
 
-    # Fresh init
-    cursor.executescript(SCHEMA)
-    cursor.execute(
-        "INSERT INTO schema_version (version) VALUES (?)", (SCHEMA_VERSION,)
-    )
+    # Modules within a path
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS modules (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            path_id INTEGER NOT NULL,
+            title TEXT NOT NULL,
+            description TEXT,
+            module_order INTEGER NOT NULL,
+            status TEXT DEFAULT 'pending',
+            score_avg REAL DEFAULT 0,
+            times_repeated INTEGER DEFAULT 0,
+            started TEXT,
+            completed TEXT,
+            FOREIGN KEY (path_id) REFERENCES paths(id) ON DELETE CASCADE
+        )
+    ''')
+
+    # Resources for each module
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS resources (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            module_id INTEGER NOT NULL,
+            url TEXT NOT NULL,
+            title TEXT,
+            type TEXT,
+            verified TEXT DEFAULT 'pending',
+            FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE
+        )
+    ''')
+
+    # Daily tasks
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS daily_tasks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            module_id INTEGER NOT NULL,
+            date TEXT NOT NULL,
+            content TEXT NOT NULL,
+            response TEXT,
+            score INTEGER,
+            feedback TEXT,
+            skipped INTEGER DEFAULT 0,
+            awaiting_response INTEGER DEFAULT 1,
+            FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE
+        )
+    ''')
+
+    # Insert default config values if not exist
+    defaults = [
+        ('active_path_id', ''),
+        ('pending_task_id', ''),
+        ('last_response_date', ''),
+        ('streak_count', '0'),
+    ]
+    for key, value in defaults:
+        c.execute('INSERT OR IGNORE INTO config (key, value) VALUES (?, ?)', (key, value))
+
     conn.commit()
     conn.close()
-    print(f"DB initialized at {db_path} (schema v{SCHEMA_VERSION})")
-
+    print(f"Database initialized at: {db_path}")
 
 if __name__ == "__main__":
-    path = DB_PATH
-    if "--db" in sys.argv:
-        idx = sys.argv.index("--db")
-        if idx + 1 < len(sys.argv):
-            path = sys.argv[idx + 1]
-    init_db(path)
+    init_db()
