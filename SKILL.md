@@ -2,7 +2,7 @@
 name: tutor
 description: Personal AI tutor — generates learning paths, sends daily tasks via Telegram, evaluates progress, and adapts to the learner.
 version: 1.2.0
-author: Miguel + Hermilio
+author: Miguel + Jorge
 argument-hint: /tutor init <topic> | /tutor status | /tutor pause | /tutor resume | /tutor submit <response>
 ---
 
