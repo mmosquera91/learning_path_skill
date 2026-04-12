@@ -33,7 +33,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans:** 3 plans
 
 Plans:
-- [ ] 01-01: Schema migration, config initialization, backup/down-migration, and AGENTS.md alignment
+- [x] 01-01: Schema migration, config initialization, backup/down-migration, and AGENTS.md alignment
 - [ ] 01-02: Test suite for URL validation, DB init, migration, and eval pipeline state transitions
 - [ ] 01-03: Input validation (CHECK constraint), DB file permissions (chmod 600), and SQL parameterization
 

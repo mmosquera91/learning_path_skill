@@ -57,7 +57,7 @@ These are the non-obvious choices that shaped the skill. Understanding them prev
 │
 ├── scripts/
 │   ├── init_db.py            # Idempotent DB initialization. Creates all tables + default config.
-│   └── migrate_db.py         # Schema migration engine. Runs ALTER TABLE based on version delta.
+│   └── migrate_db.py         # Schema migration engine. Up/down migration with backup support.
 │
 └── learning.db               # Runtime state — created by init_db.py, ignored by git
 ```
@@ -239,22 +239,16 @@ If JSON parsing fails, retry once. If it fails again, ask the user to resubmit a
 
 ### Adding a New Column to the Database
 
-1. **Do NOT modify `init_db.py`** — that's for fresh installs only
-2. **Edit `migrate_db.py`:**
+1. **Edit `migrate_db.py`:**
    - Increment `EXPECTED_VERSION`
-   - Add a migration entry:
-     ```python
-     MIGRATIONS = {
-         # ... existing ...
-         2: [
-             "ALTER TABLE modules ADD COLUMN difficulty TEXT DEFAULT 'medium'",
-         ],
-     }
-     ```
-3. **Update `init_db.py` SCHEMA** to include the new column for fresh installs
-4. **Update `SCHEMA_VERSION` in `init_db.py` to match `EXPECTED_VERSION`**
-5. **Run migration:** `python3 ~/.hermes/skills/tutor/scripts/migrate_db.py`
-6. **Update all subskills** that reference the affected table
+   - Add an entry to `MIGRATIONS` with the ALTER TABLE statement(s)
+   - Add a matching entry to `REVERSE_MIGRATIONS` for down-migration support
+2. **Edit `init_db.py`:**
+   - Add the new column to the `CREATE TABLE` statement for fresh installs
+   - If the column has a corresponding config key, add it to the `defaults` list
+3. **Run migration:** `python3 ~/.hermes/skills/tutor/scripts/migrate_db.py`
+4. **Update `AGENTS.md`** schema docs (Tables and Config Keys sections) to match
+5. **Update all subskills** that reference the affected table
 
 ### Adding a New Command
 
