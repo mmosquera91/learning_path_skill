@@ -15,7 +15,10 @@ python3 ~/.hermes/skills/tutor/scripts/init_db.py
 SELECT value FROM config WHERE key='active_path_id';
 ```
 
-If no active path: exit silently (user hasn't started a path yet)
+If no active path: **END IMMEDIATELY — NO OUTPUT, NO MESSAGE**
+- Do NOT send any message to Telegram
+- Do NOT generate any response
+- Exit with empty output (user hasn't started a path yet)
 
 ### 3. Check for existing pending task
 ```sql
