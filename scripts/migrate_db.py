@@ -3,28 +3,57 @@
 
 Usage:
     python3 migrate_db.py [--db PATH]
+    python3 migrate_db.py --down [--db PATH]
 
 Compares schema_version in the DB with EXPECTED_VERSION and runs
 ALTER TABLE statements as needed. Safe to run multiple times.
+
+Supports forward migration (up) and reverse migration (down).
+Creates backups before each migration.
 """
 
-import sqlite3
 import os
+import shutil
+import sqlite3
 import sys
 
 DB_PATH = os.path.expanduser("~/.hermes/skills/tutor/learning.db")
 
-EXPECTED_VERSION = 1
+EXPECTED_VERSION = 2
 
 # Each key = version we're migrating TO
 # Value = list of SQL statements to run
 MIGRATIONS = {
-    # Example for future versions:
-    # 2: [
-    #     "ALTER TABLE modules ADD COLUMN difficulty TEXT DEFAULT 'medium'",
-    #     "ALTER TABLE daily_tasks ADD COLUMN time_spent_minutes INTEGER",
-    #     "CREATE TABLE IF NOT EXISTS tags (id INTEGER PRIMARY KEY, module_id INTEGER REFERENCES modules(id), tag TEXT)",
-    # ],
+    2: [
+        "ALTER TABLE modules ADD COLUMN score REAL DEFAULT 0",
+        "ALTER TABLE modules ADD COLUMN next_review_date TEXT",
+        "ALTER TABLE daily_tasks ADD COLUMN response_window_end TEXT",
+        "ALTER TABLE daily_tasks ADD COLUMN feedback TEXT",
+        "INSERT OR IGNORE INTO config (key, value) VALUES ('last_task_date', '')",
+        "INSERT OR IGNORE INTO config (key, value) VALUES ('daily_count', '0')",
+        "INSERT OR IGNORE INTO config (key, value) VALUES ('weekly_count', '0')",
+        "INSERT OR IGNORE INTO config (key, value) VALUES ('response_window_end', '')",
+    ],
+}
+
+# Reverse migrations: recreate tables without new columns using
+# SELECT ... INTO temp pattern, drop old, rename
+REVERSE_MIGRATIONS = {
+    2: [
+        # Backup and rebuild daily_tasks first (it depends on modules via FK,
+        # so we copy its data before touching modules)
+        "CREATE TABLE daily_tasks_backup AS SELECT id, module_id, date, content, response, score, feedback, skipped, awaiting_response FROM daily_tasks",
+        "DROP TABLE daily_tasks",
+        "ALTER TABLE daily_tasks_backup RENAME TO daily_tasks",
+        "CREATE INDEX IF NOT EXISTS idx_daily_tasks_module_id ON daily_tasks(module_id)",
+        # Then backup and rebuild modules
+        "CREATE TABLE modules_backup AS SELECT id, path_id, title, description, module_order, status, score_avg, times_repeated, started, completed FROM modules",
+        "DROP TABLE modules",
+        "ALTER TABLE modules_backup RENAME TO modules",
+        "CREATE INDEX IF NOT EXISTS idx_modules_path_id ON modules(path_id)",
+        # Remove added config keys
+        "DELETE FROM config WHERE key IN ('last_task_date', 'daily_count', 'weekly_count', 'response_window_end')",
+    ],
 }
 
 
@@ -37,6 +66,14 @@ def get_current_version(conn: sqlite3.Connection) -> int:
         return row[0] if row else 0
     except sqlite3.OperationalError:
         return 0
+
+
+def backup_db(db_path: str, version: int) -> str:
+    """Create a backup of the database before migration."""
+    backup_path = f"{db_path}.bak.v{version}"
+    shutil.copy2(db_path, backup_path)
+    print(f"Backup created: {backup_path}")
+    return backup_path
 
 
 def migrate(db_path: str = DB_PATH):
@@ -64,6 +101,9 @@ def migrate(db_path: str = DB_PATH):
         return
 
     print(f"Migrating: v{current} -> v{EXPECTED_VERSION}")
+
+    # Create backup before applying migration
+    backup_db(db_path, current)
 
     cursor = conn.cursor()
 
@@ -103,10 +143,67 @@ def migrate(db_path: str = DB_PATH):
     conn.close()
 
 
+def migrate_down(db_path: str = DB_PATH):
+    """Reverse migration from current version down one step."""
+    if not os.path.exists(db_path):
+        print(f"DB not found at {db_path}. Run init_db.py first.")
+        sys.exit(1)
+
+    conn = sqlite3.connect(db_path)
+    conn.execute("PRAGMA journal_mode=WAL")
+    # Disable foreign keys during down-migration to prevent CASCADE deletes
+    # when tables are dropped and recreated in the reverse migration steps.
+    conn.execute("PRAGMA foreign_keys=OFF")
+    conn.execute("PRAGMA busy_timeout=5000")
+
+    current = get_current_version(conn)
+
+    if current <= 1:
+        print(f"Already at schema v{current}. Nothing to revert.")
+        conn.close()
+        return
+
+    target_version = current - 1
+
+    if current not in REVERSE_MIGRATIONS:
+        print(f"No reverse migration defined for v{current}.")
+        conn.close()
+        return
+
+    print(f"Down-migrating: v{current} -> v{target_version}")
+
+    # Create backup before down-migration
+    backup_db(db_path, current)
+
+    cursor = conn.cursor()
+
+    print(f"  Reversing migration from v{current}...")
+    for sql in REVERSE_MIGRATIONS[current]:
+        try:
+            cursor.execute(sql)
+            print(f"    OK: {sql[:80]}...")
+        except sqlite3.OperationalError as e:
+            print(f"    ERROR: {e}")
+            print(f"    SQL: {sql}")
+            conn.close()
+            sys.exit(1)
+
+    # Update version
+    cursor.execute("UPDATE schema_version SET version = ?", (target_version,))
+    conn.commit()
+
+    print(f"Down-migration complete. Now at v{target_version}.")
+    conn.close()
+
+
 if __name__ == "__main__":
     path = DB_PATH
+    down = "--down" in sys.argv
     if "--db" in sys.argv:
         idx = sys.argv.index("--db")
         if idx + 1 < len(sys.argv):
             path = sys.argv[idx + 1]
-    migrate(path)
+    if down:
+        migrate_down(path)
+    else:
+        migrate(path)

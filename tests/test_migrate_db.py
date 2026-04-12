@@ -79,6 +79,8 @@ def _create_v1_db(db_path: str) -> sqlite3.Connection:
         FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE
     )""")
 
+    c.execute("CREATE TABLE IF NOT EXISTS schema_version (version INTEGER)")
+
     # Insert default config values
     defaults = [
         ('active_path_id', ''),
