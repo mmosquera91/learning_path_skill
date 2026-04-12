@@ -158,9 +158,16 @@ UPDATE config SET value = '{path_id}' WHERE key = 'active_path_id';
 Send: "▶️ Resumed: {topic}. Next task comes tomorrow at 9 AM."
 
 ### /tutor switch <topic>
+Note: The user input parameter must be escaped before binding:
+- Replace `\` with `\\`
+- Replace `%` with `\%`
+- Replace `_` with `\_`
+- Wrap in `%...%` for substring matching
+- Bind the escaped string as the parameter
+
 ```sql
 SELECT id, topic, status FROM paths
-WHERE topic LIKE '%{topic}%' AND status = 'active' AND is_active = 0
+WHERE topic LIKE ? ESCAPE '\' AND status = 'active' AND is_active = 0
 LIMIT 1;
 ```
 If found:

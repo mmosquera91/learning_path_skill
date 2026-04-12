@@ -7,10 +7,17 @@
 ## Steps
 
 ### 1. For /tutor review command
+Note: The user input parameter must be escaped before binding:
+- Replace `\` with `\\`
+- Replace `%` with `\%`
+- Replace `_` with `\_`
+- Wrap in `%...%` for substring matching
+- Bind the escaped string as the parameter
+
 ```sql
 SELECT id, title, status FROM modules
 WHERE path_id = (SELECT value FROM config WHERE key='active_path_id')
-AND title LIKE '%{module}%'
+AND title LIKE ? ESCAPE '\'
 ORDER BY module_order;
 ```
 
