@@ -30,12 +30,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. migrate_db.py creates a backup before applying changes and supports down-migration to the previous version
   5. User submissions longer than a defined limit are rejected before being written to the database, and learning.db is created with 600 permissions
   6. All SQL LIKE clauses use parameterized patterns with ESCAPE clause instead of string interpolation
-**Plans**: TBD
+**Plans:** 3 plans
 
 Plans:
-- [ ] 01-01: Schema migration and config initialization
-- [ ] 01-02: Test suite for DB operations, URL validation, and migration
-- [ ] 01-03: Input validation, DB permissions, and SQL parameterization
+- [ ] 01-01: Schema migration, config initialization, backup/down-migration, and AGENTS.md alignment
+- [ ] 01-02: Test suite for URL validation, DB init, migration, and eval pipeline state transitions
+- [ ] 01-03: Input validation (CHECK constraint), DB file permissions (chmod 600), and SQL parameterization
 
 ### Phase 2: Code Quality
 **Goal**: Tier rules exist in one canonical location, SKILL.md is under 200 lines, and init.md is under 150 lines
@@ -45,7 +45,7 @@ Plans:
   1. Tier classification rules are defined in CONTRIBUTING.md and validate_urls.py only -- SKILL.md and init.md reference them instead of containing inline copies
   2. `wc -l SKILL.md` reports fewer than 200 lines and the skill routes commands correctly
   3. `wc -l subskills/init.md` reports fewer than 150 lines and the init flow (syllabus generation, URL validation, path activation) still works end-to-end
-**Plans**: TBD
+**Plans:** TBD
 
 Plans:
 - [ ] 02-01: Tier rule deduplication and SKILL.md reduction
@@ -59,7 +59,7 @@ Plans:
   1. eval.md uses a single consistent placeholder format throughout (no mixing of Mustache and plain text)
   2. daily.md produces a Telegram message or logs a specific error when task generation, DB write, or Telegram delivery fails
   3. Syllabus template output references `/tutor confirm` and `/tutor edit` (not any other command format)
-**Plans**: TBD
+**Plans:** TBD
 
 Plans:
 - [ ] 03-01: Template syntax and command format fixes
@@ -72,7 +72,7 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. `git log --all --diff-filter=A -- learning.db` returns no results
   2. `git rev-list --all -- learning.db | xargs git grep -l` returns no results (no blob contains the file)
-**Plans**: TBD
+**Plans:** TBD
 
 Plans:
 - [ ] 04-01: Purge learning.db from git history
@@ -84,7 +84,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 0/3 | Not started | - |
+| 1. Foundation | 0/3 | Planning complete | - |
 | 2. Code Quality | 0/2 | Not started | - |
 | 3. Correctness | 0/2 | Not started | - |
 | 4. Security Cleanup | 0/1 | Not started | - |
