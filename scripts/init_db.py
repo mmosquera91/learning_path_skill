@@ -48,6 +48,8 @@ def init_db():
             module_order INTEGER NOT NULL,
             status TEXT DEFAULT 'pending',
             score_avg REAL DEFAULT 0,
+            score REAL DEFAULT 0,
+            next_review_date TEXT,
             times_repeated INTEGER DEFAULT 0,
             started TEXT,
             completed TEXT,
@@ -78,6 +80,7 @@ def init_db():
             response TEXT CHECK(length(response) <= 10000 OR response IS NULL),
             score INTEGER,
             feedback TEXT,
+            response_window_end TEXT,
             skipped INTEGER DEFAULT 0,
             awaiting_response INTEGER DEFAULT 1,
             FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE
@@ -90,6 +93,10 @@ def init_db():
         ('pending_task_id', ''),
         ('last_response_date', ''),
         ('streak_count', '0'),
+        ('last_task_date', ''),
+        ('daily_count', '0'),
+        ('weekly_count', '0'),
+        ('response_window_end', ''),
     ]
     for key, value in defaults:
         c.execute('INSERT OR IGNORE INTO config (key, value) VALUES (?, ?)', (key, value))
