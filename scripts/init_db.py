@@ -48,8 +48,6 @@ def init_db():
             module_order INTEGER NOT NULL,
             status TEXT DEFAULT 'pending',
             score_avg REAL DEFAULT 0,
-            score REAL DEFAULT 0,
-            next_review_date TEXT,
             times_repeated INTEGER DEFAULT 0,
             started TEXT,
             completed TEXT,
@@ -77,9 +75,8 @@ def init_db():
             module_id INTEGER NOT NULL,
             date TEXT NOT NULL,
             content TEXT NOT NULL,
-            response TEXT,
+            response TEXT CHECK(length(response) <= 10000 OR response IS NULL),
             score INTEGER,
-            response_window_end TEXT,
             feedback TEXT,
             skipped INTEGER DEFAULT 0,
             awaiting_response INTEGER DEFAULT 1,
@@ -93,16 +90,16 @@ def init_db():
         ('pending_task_id', ''),
         ('last_response_date', ''),
         ('streak_count', '0'),
-        ('last_task_date', ''),
-        ('daily_count', '0'),
-        ('weekly_count', '0'),
-        ('response_window_end', ''),
     ]
     for key, value in defaults:
         c.execute('INSERT OR IGNORE INTO config (key, value) VALUES (?, ?)', (key, value))
 
     conn.commit()
     conn.close()
+
+    # Set file permissions: owner read/write only
+    os.chmod(str(db_path), 0o600)
+
     print(f"Database initialized at: {db_path}")
 
 if __name__ == "__main__":
