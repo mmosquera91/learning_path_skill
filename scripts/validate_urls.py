@@ -63,11 +63,18 @@ def classify_url(url):
         return (None, "Invalid YouTube URL format")
     
     # Check against tier patterns
+    # Two-pass: specific (domain-anchored) patterns first across all tiers,
+    # then generic (path-based) patterns. This prevents a generic tier 1 pattern
+    # from shadowing a specific tier 2 domain pattern (e.g., coursera.org/learn).
     for tier in [1, 2, 4]:  # Skip 3 (handled above)
         for pattern, type_name in TIER_PATTERNS[tier]:
-            if re.search(pattern, url):
+            if '.' in pattern and re.search(pattern, url):
                 return (tier, type_name)
-    
+    for tier in [1, 2, 4]:  # Skip 3 (handled above)
+        for pattern, type_name in TIER_PATTERNS[tier]:
+            if '.' not in pattern and re.search(pattern, url):
+                return (tier, type_name)
+
     return (None, "Unknown/untrusted domain")
 
 def check_http_status(url, timeout=10):
