@@ -1,11 +1,11 @@
 ---
-status: diagnosed
+status: verified
 phase: 03-correctness
 source:
   - .planning/phases/03-correctness/03-01-SUMMARY.md
   - .planning/phases/03-correctness/03-02-SUMMARY.md
 started: 2026-04-13T12:10:00Z
-updated: 2026-04-13T12:15:00Z
+updated: 2026-04-13T12:50:00Z
 ---
 
 ## Current Test
@@ -51,19 +51,23 @@ result: pass
 ## Summary
 
 total: 5
-passed: 3
-issues: 2
+passed: 5
+issues: 0
+closed: 2
 pending: 0
 skipped: 0
 
 ## Gaps
 
 - truth: "Error messages in daily.md are hardcoded in Spanish"
-  status: failed
+  status: closed
   reason: "User reported: will this fail if a user's main language is not Spanish?"
   severity: major
   test: 1
   root_cause: "No i18n mechanism exists. SKILL.md persona says 'match user's language (default: Spanish)' but is aspirational. No language field in config table, no message externalization."
+  resolved_by: "03-03 (added locale config and parameterized messages)"
+  closed: 2026-04-13T12:50:00Z
+  verified_by: "03-VERIFICATION.md"
   artifacts:
     - path: "subskills/daily.md"
       issue: "Lines 89, 110, 131: hardcoded Spanish error messages with no language variable"
@@ -77,11 +81,14 @@ skipped: 0
     - "Support Spanish (default) and English"
   debug_session: ".planning/debug/spanish-error-messages.md"
 - truth: "Telegram delivery error message in daily.md is hardcoded in Spanish"
-  status: failed
+  status: closed
   reason: "User reported: same Spanish hardcoding issue as test 1"
   severity: major
   test: 3
   root_cause: "Same root cause as Gap 1 - no i18n mechanism. Step 6 and Step 8 in daily.md both hardcode Spanish strings with no language parameterization."
+  resolved_by: "03-03 (same fix as Gap 1)"
+  closed: 2026-04-13T12:50:00Z
+  verified_by: "03-VERIFICATION.md"
   artifacts:
     - path: "subskills/daily.md"
       issue: "Step 8 line 131: hardcoded Spanish Telegram error"
