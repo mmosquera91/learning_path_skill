@@ -73,7 +73,7 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. `git log --all --diff-filter=A -- learning.db` returns no results
   2. `git rev-list --all -- learning.db | xargs git grep -l` returns no results (no blob contains the file)
-**Plans:** TBD
+**Plans:** 1 plan
 
 Plans:
 - [ ] 04-01: Purge learning.db from git history
