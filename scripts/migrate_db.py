@@ -99,7 +99,7 @@ def migrate(db_path: str = DB_PATH):
         print(f"DB schema v{current} is newer than expected v{EXPECTED_VERSION}.")
         print("This might mean you're running an older version of the skill.")
         conn.close()
-        return
+        sys.exit(1)
 
     print(f"Migrating: v{current} -> v{EXPECTED_VERSION}")
 
