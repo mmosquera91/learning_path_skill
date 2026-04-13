@@ -27,5 +27,5 @@
 ## Próximos pasos
 
 Responde con:
-- `/confirm` para activar este plan de aprendizaje
-- `/edit <comentarios>` para solicitar cambios
+- `/tutor confirm` para activar este plan de aprendizaje
+- `/tutor edit <comentarios>` para solicitar cambios
