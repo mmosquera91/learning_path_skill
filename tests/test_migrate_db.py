@@ -262,6 +262,79 @@ class TestMigrationV2:
         conn.close()
 
 
+class TestCheckFlag:
+    """Test suite for migrate_db.py --check flag."""
+
+    def test_check_flag_exits_0_on_fresh_db(self, tmp_path):
+        """--check on non-existent DB should exit 0 silently."""
+        db_path = str(tmp_path / "nonexistent.db")
+        # Should not raise, should not print
+        try:
+            import io
+            import contextlib
+            f = io.StringIO()
+            with contextlib.redirect_stdout(f):
+                migrate_db.check_and_migrate(db_path)
+            output = f.getvalue()
+            assert output == "", f"Expected silent output on fresh DB, got: {output}"
+        except SystemExit:
+            raise AssertionError("--check should not exit on fresh DB")
+
+    def test_check_flag_prints_already_current(self, tmp_path):
+        """--check on current DB should print 'Already at schema v2' and exit 0."""
+        # Create DB at v2 (use init_db then run migrate to set version)
+        db_path = str(tmp_path / "current.db")
+        import init_db
+        init_db.init_db()  # Creates v2 schema
+        # Set to v2 explicitly
+        conn = sqlite3.connect(db_path)
+        conn.execute("CREATE TABLE IF NOT EXISTS schema_version (version INTEGER)")
+        conn.execute("INSERT OR IGNORE INTO schema_version (version) VALUES (2)")
+        conn.commit()
+        conn.close()
+        # Now run check
+        import io
+        import contextlib
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            migrate_db.check_and_migrate(db_path)
+        output = f.getvalue()
+        assert "Already at schema v2" in output, f"Expected 'Already at schema v2', got: {output}"
+
+    def test_check_flag_migrates_behind_schema(self, tmp_path):
+        """--check on v1 DB should auto-migrate to v2."""
+        db_path = str(tmp_path / "behind.db")
+        create_v1_db(db_path)
+        import io
+        import contextlib
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            migrate_db.check_and_migrate(db_path)
+        output = f.getvalue()
+        assert "Migrating:" in output or "Already at schema v2" in output, f"Expected migration output, got: {output}"
+        # Verify data preserved
+        conn = sqlite3.connect(db_path)
+        ver = conn.execute("SELECT version FROM schema_version").fetchone()
+        assert ver[0] == 2, f"Expected v2 after migration, got v{ver[0]}"
+        path = conn.execute("SELECT topic FROM paths WHERE id=1").fetchone()
+        assert path[0] == "Python", "Path data corrupted after migration"
+        conn.close()
+
+    def test_check_flag_exits_1_on_newer_schema(self, tmp_path):
+        """--check on DB newer than EXPECTED_VERSION should exit 1."""
+        db_path = str(tmp_path / "newer.db")
+        conn = sqlite3.connect(db_path)
+        conn.execute("CREATE TABLE IF NOT EXISTS schema_version (version INTEGER)")
+        conn.execute("INSERT INTO schema_version (version) VALUES (999)")
+        conn.commit()
+        conn.close()
+        try:
+            migrate_db.check_and_migrate(db_path)
+            raise AssertionError("Should have exited with code 1")
+        except SystemExit as e:
+            assert e.code == 1, f"Expected exit code 1, got {e.code}"
+
+
 if __name__ == "__main__":
     import pytest
     pytest.main([__file__, "-x", "-v"])
