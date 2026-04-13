@@ -3,6 +3,15 @@
 ## Trigger
 Cron job: `0 9 * * *` (9 AM daily)
 
+## Resource Tier Reference (for cron context)
+
+| Tier | Source Type | Examples | Reliability | Max/Module |
+|------|-------------|----------|-------------|------------|
+| TIER 1 | Interactive platforms | exercism.org, codecademy.com, duolingo.com, chess.com/lessons | ⭐⭐⭐⭐⭐ | Unlimited |
+| TIER 2 | Official courses | Coursera, edX, Khan Academy, docs | ⭐⭐⭐⭐ | 2 |
+| TIER 3 | YouTube (single videos ONLY) | Individual videos, NO playlists | ⭐⭐ | 1 |
+| TIER 4 | Reference materials | Wikipedia, technical blogs | ⭐⭐ | 1 |
+
 ## Steps
 
 ### 1. Ensure database exists
