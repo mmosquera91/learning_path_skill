@@ -12,7 +12,7 @@ Harden the existing Hermes Tutor skill by fixing the schema-documentation mismat
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Foundation** - Schema alignment, test suite, input validation, and SQL safety
+- [x] **Phase 1: Foundation** - Schema alignment, test suite, input validation, and SQL safety
 - [ ] **Phase 2: Code Quality** - Tier rule deduplication and context budget reduction
 - [ ] **Phase 3: Correctness** - Template syntax fixes, error handling, and command format corrections
 - [ ] **Phase 4: Security Cleanup** - Git history purge
@@ -34,7 +34,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 Plans:
 - [x] 01-01: Schema migration, config initialization, backup/down-migration, and AGENTS.md alignment
-- [ ] 01-02: Test suite for URL validation, DB init, migration, and eval pipeline state transitions
+- [x] 01-02: Test suite for URL validation, DB init, migration, and eval pipeline state transitions
 - [x] 01-03: Input validation (CHECK constraint), DB file permissions (chmod 600), and SQL parameterization
 
 ### Phase 2: Code Quality
@@ -84,7 +84,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 0/3 | Planning complete | - |
+| 1. Foundation | 3/3 | Complete | 2026-04-13 |
 | 2. Code Quality | 0/2 | Not started | - |
 | 3. Correctness | 0/2 | Not started | - |
 | 4. Security Cleanup | 0/1 | Not started | - |

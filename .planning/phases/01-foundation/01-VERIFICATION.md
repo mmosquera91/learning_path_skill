@@ -1,8 +1,10 @@
 ---
 phase: 01-foundation
 verified: 2025-04-12T21:30:00Z
-status: gaps_found
-score: 4/6 must-haves verified
+reverified: 2026-04-13T00:00:00Z
+status: all_gaps_closed
+score: 6/6 must-haves verified
+gap_fix: "Commit 83b687d8 restored v2 columns and config keys to init_db.py, closing all 3 failed truths (SCHEMA-01, SCHEMA-02, SCHEMA-03) and 1 partial truth (TEST-02). All 57 tests pass."
 gaps:
   - truth: "python scripts/init_db.py creates all documented columns (next_review_date, score, response_window_end, feedback) and initializes all config keys (last_task_date, daily_count, weekly_count, response_window_end)"
     status: failed
