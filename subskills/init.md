@@ -9,7 +9,7 @@ User sends: `/tutor init <topic>` or "quiero aprender <topic>"
 ```bash
 python3 ~/.hermes/skills/tutor/scripts/init_db.py
 ```
-This is idempotent — safe to run every time. It creates the DB if missing, skips if already initialized.
+Idempotent — safe to run every time.
 
 ### 1. Check for existing active path
 ```bash
@@ -29,219 +29,84 @@ else:
 conn.close()
 "
 ```
-If there's already an active path, ask the user: "You already have an active path: {topic}. Do you want to /tutor pause it first and create a new one?"
+If active path exists, ask: "You already have an active path: {topic}. /tutor pause it first?"
+
+## Resource Tier Reference (for cron context self-containment)
+
+| Tier | Description | Examples | Limits |
+|------|-------------|----------|--------|
+| TIER 1 | Interactive platforms with exercises | exercism.org, codecademy.com, duolingo.com, chess.com/lessons | MIN 50% per module |
+| TIER 2 | Official courses and docs | coursera.org, edx.org, khanacademy.org | Max 2/module |
+| TIER 3 | YouTube single videos ONLY | youtube.com/watch?v=... | Max 1/module, NO PLAYLISTS |
+| TIER 4 | Reference materials | wikipedia, github docs, medium | Max 1/module |
+
+TIER RULES: See inline tier table above. Full rules in CONTRIBUTING.md §1-3.
 
 ### 2. Research phase — gather real resources
-Before generating the syllabus, research the topic to find real, specific learning resources. Use `delegate_task` with `web_search`:
+Use `delegate_task` with `web_search`:
 
-**Search strategy (run in parallel if possible):**
-1. `"{topic} course syllabus modules curriculum"` — find typical module structure
-2. `"{topic} lessons tutorial site:coursera.org OR site:edx.org OR site:khanacademy.org OR site:freecodecamp.org"` — find specific lesson URLs
-3. `"{topic} tutorial beginner site:youtube.com"` — find specific video URLs (check channel credibility)
-4. `"{topic} exercises practice problems"` — find interactive exercises
-5. `"{topic} documentation official guide"` — find official docs
+1. `"{topic} course syllabus modules curriculum"`
+2. `"{topic} lessons site:coursera.org OR site:edx.org OR site:khanacademy.org"`
+3. `"{topic} tutorial beginner site:youtube.com"`
+4. `"{topic} exercises practice problems"`
+5. `"{topic} documentation official guide"`
 
-**For each result, capture:**
-- Exact URL (must include specific path, not just homepage)
-- Title of the lesson/course/module from the search result
-- Source domain (prioritize trusted domains per rules below)
-
-**TRUSTED SOURCE RULES (strictly enforce):**
-
-**TIER SYSTEM (prioritize by reliability):**
-- **TIER 1 (⭐⭐⭐⭐⭐):** Interactive learning platforms with exercises/lessons — ALWAYS prioritize these, minimum 50% of resources
-- **TIER 2 (⭐⭐⭐⭐):** Official docs, established courses (coursera, edx, khanacademy) — max 2 per module
-- **TIER 3 (⭐⭐):** YouTube single videos ONLY — max 1 per module, NO PLAYLISTS
-- **TIER 4 (⭐⭐):** Reference materials — max 1 per module
-
-**CRITICAL URL RULES:**
-1. **NO YOUTUBE PLAYLISTS:** Reject ANY URL with `&list=` or `playlist?` — these break when videos change
-2. **URLs MUST be specific** — reject generic paths like `/tutorials` or `/courses`
-3. **TIER 1 pattern examples by topic:**
-   - Programming: `exercism.org/tracks/*`, `codecademy.com/learn/*`, `leetcode.com/studyplan/*`
-   - Languages: `duolingo.com/lesson/*`, `babbel.com/learn/*`
-   - Chess: `chess.com/lessons/<lesson-slug>`, `lichess.org/learn#/<number>`
-   - Math: `khanacademy.org/<subject>/*`, `brilliant.org/courses/*`
-4. Do NOT fabricate URLs — only use URLs from search results
-5. Do NOT use personal blogs or unknown domains
-
-Store the research results in a structured format for the next step.
+**For each result capture:** exact URL, title, source domain. NO fabricated URLs.
 
 ### 3. Generate the syllabus
-Use the LLM to generate a structured learning path, **incorporating the research results from Step 2**. 
-
-**CRITICAL: Follow TIER system when selecting resources:**
-- TIER 1 (⭐⭐⭐⭐⭐): Interactive platforms with exercises/lessons — MINIMUM 50% of resources
-- TIER 2 (⭐⭐⭐⭐): Official courses (coursera, edx, khanacademy) — max 2 per module  
-- TIER 3 (⭐⭐): YouTube SINGLE VIDEOS only — max 1 per module
-- NEVER include YouTube playlists (URLs with `&list=`)
-
-**Priority order for TIER 1 sources (adapt to topic):**
-- Programming: exercism.org, codecademy.com, leetcode.com study plans, official language tutorials
-- Languages: duolingo.com, babbel.com, busuu.com
-- Chess: chess.com/lessons, lichess.org/learn
-- Math/Science: khanacademy.org, brilliant.org/courses
-- Music: musictheory.net/lessons, teoria.com
-
-Prompt:
+Incorporate research results from Step 2. Prompt the LLM with:
 ```
-Generate a structured learning syllabus for: {topic}
-
-Use the following research results to build the syllabus. These are REAL resources found on the web:
----
-{research_results}
----
+Generate a JSON syllabus for {topic} using the research results above.
 
 Requirements:
-- 8-15 modules, ordered from foundational to advanced
-- Each module has: title, description (2-3 sentences), estimated time to complete
-- Include 3-4 resources per module, selected ONLY from the research results above
-- PRIORITY ORDER for resource selection (follow strictly):
-  1. Interactive platforms with exercises (TIER 1 - most preferred)
-  2. Official courses: coursera.org/learn/*, edx.org/learn/*, khanacademy.org/* (TIER 2)
-  3. YouTube single videos ONLY if no better option (TIER 3)
-- REJECT: YouTube playlists (any URL with &list= parameter)
-- REJECT: Generic homepage URLs
-- Each resource MUST use the exact URL from research
-- Resource types: doc, video, exercise, article
-- Mark 3-4 milestones (key checkpoint modules)
-- Estimate total duration in weeks
-- Language: match the user's language
+- 8-15 modules, foundational → advanced, each with title/description/estimated_time
+- 3-4 resources per module from research results ONLY
+- PRIORITY: TIER 1 > TIER 2 > TIER 3 > TIER 4
+- REJECT: YouTube playlists (&list=), generic homepage URLs
+- 3-4 milestones, estimate total duration in weeks
+- Match user's language
 
-TIER BALANCE CHECK: Each module must have at least 50% TIER 1 resources.
-
-Output as valid JSON:
-{
-  "topic": "...",
-  "description": "...",
-  "estimated_duration": "...",
-  "modules": [
-    {
-      "title": "...",
-      "description": "...",
-      "estimated_time": "...",
-      "resources": [
-        {"url": "...", "title": "...", "type": "doc|video|exercise|article"}
-      ],
-      "is_milestone": false
-    }
-  ]
-}
+JSON schema:
+{"topic":"...","description":"...","estimated_duration":"...","modules":[{"title":"...","description":"...","estimated_time":"...","resources":[{"url":"...","title":"...","type":"doc|video|exercise|article"}],"is_milestone":false}]}
 ```
 
-### 4. Validate resources
+Save to `/tmp/syllabus.json`. Render using templates/init-syllabus.md:
+```bash
+python3 -c "import json; d=json.load(open('/tmp/syllabus.json')); t=open('templates/init-syllabus.md').read(); [t:=t.replace('{{'+k+'}}', str(v)) for k in ['topic','description','estimated_duration']]; mods=''; [(mods:=mods+f\"### {m['title']} 🎯\n\n{m['description']}\n\n**Tiempo:** {m['estimated_time']}\n\n\"+''.join(f\"- [{r['title']}]({r['url']}) ({r['type']}) ✅\n\" for r in m.get('resources',[]))+\"\n---\n\n\") for m in d.get('modules',[])]; t=t.replace('{{#modules}}',mods).replace('{{/modules}}',''); print(t)"
+```
 
-**STEP 4A: Run validation script**
-Save syllabus to temp file and run validator:
+Display the rendered syllabus to the user.
+
+### 4. Validate resources
 ```bash
 python3 ~/.hermes/skills/tutor/scripts/validate_urls.py --http < /tmp/syllabus.json
 ```
+- NO YouTube playlists (`&list=` or `playlist?` — REJECTED)
+- TIER 1 minimum 50% per module
+- Single URL check: `validate_urls.py --check "https://..."`
 
-This checks:
-- URL pattern matches trusted sources (TIER 1-4)
-- NO YouTube playlists (rejects `&list=`)
-- HTTP status for TIER 1-2 URLs
-- Balance: min 50% TIER 1 per module
-
-**STEP 4B: Review validation output**
-The script outputs:
-```
-TIER 1 (⭐⭐⭐⭐⭐ Interactive): 24
-TIER 2 (⭐⭐⭐⭐ Official): 8
-TIER 3 (⭐⭐ YouTube): 4
-INVALID: 2
-
-✅ Module Name (TIER 1: 60%)
-❌ Bad Module (TIER 1: 25%) — Needs more interactive resources
-   ❌ INVALID: https://youtube.com/playlist?...
-      Reason: YouTube PLAYLIST - not allowed
-```
-
-**STEP 4C: Fix or regenerate**
-- If INVALID URLs found: Remove them or find alternatives
-- If TIER 1 < 50%: Add more interactive platform resources
-- If YouTube playlists found: Replace with single video URLs
-- Re-run validation until all modules pass
-
-**Quick URL check (single URL):**
-```bash
-python3 ~/.hermes/skills/tutor/scripts/validate_urls.py --check "https://..."
-```
+If INVALID or TIER 1 < 50%: fix and re-validate.
 
 ### 5. Present syllabus for review
-Format the syllabus using templates/syllabus.md and send to the user via Telegram.
+The rendered syllabus from Step 3 is sent to user via Telegram.
 
-For each module, render its study sources using the format defined in the template:
-- Show the resource title as a clickable link
-- Show the resource type (doc, video, exercise, article)
-- Show ✅ for verified URLs or ⚠️ for unverified ones
-
-This ensures the user can review BOTH the structure of the path AND the specific sources before confirming.
-
-If there are unverified resources, add a note at the end:
-```
-⚠️ Estas fuentes no pudieron verificarse automáticamente:
-{unverified_list}
-Puedes continuar igual — las fuentes son complementarias y puedes reemplazarlas con /tutor edit.
-```
+If unverified resources: add ⚠️ warning with list.
 
 ### 6. Wait for user confirmation
-- User sends `/tutor confirm` → proceed to step 7
-- User sends `/tutor edit <feedback>` → regenerate syllabus incorporating feedback, go back to step 5
-- If user is silent for 24h, the unconfirmed path auto-stays as draft
+- `/tutor confirm` → step 7
+- `/tutor edit <feedback>` → regenerate, back to step 3
+- Silent 24h → stays as draft
 
 ### 7. Save to SQLite and activate
-```python
-import sqlite3, os, json
-from datetime import datetime, timezone
-
-db = os.path.expanduser('~/.hermes/skills/tutor/learning.db')
-conn = sqlite3.connect(db)
-conn.execute("PRAGMA foreign_keys=ON")
-c = conn.cursor()
-
-# Insert path
-now = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
-c.execute('INSERT INTO paths (topic, status, is_active, confirmed, created) VALUES (?, ?, 1, 1, ?)',
-          (syllabus["topic"], "active", now))
-path_id = c.lastrowid
-
-# Insert modules and resources
-for i, mod in enumerate(syllabus["modules"]):
-    c.execute('''INSERT INTO modules (path_id, title, description, module_order, status)
-                 VALUES (?, ?, ?, ?, 'pending')''',
-              (path_id, mod["title"], mod["description"], i+1))
-    mod_id = c.lastrowid
-    for res in mod.get("resources", []):
-        c.execute('''INSERT INTO resources (module_id, url, title, type, verified)
-                     VALUES (?, ?, ?, ?, ?)''',
-                  (mod_id, res["url"], res["title"], res["type"], res.get("verified", "pending")))
-
-# Set as active
-c.execute('UPDATE config SET value=? WHERE key="active_path_id"', (str(path_id),))
-conn.commit()
-conn.close()
+```bash
+python3 scripts/save_path.py --file /tmp/syllabus.json
 ```
 
 ### 8. Create cron jobs (if they don't exist)
-Before creating cron jobs, check existing ones to avoid duplicates:
-
-```python
-# Use cronjob(action="list") to check for existing jobs
-# Look for jobs with names: "tutor-daily" and "tutor-weekly"
-# If a job with matching name already exists → skip it, do NOT create a duplicate
-# If no matching name found → create it using cronjob(action="create")
-```
-
-Rules:
-- **Always check by name** (`tutor-daily`, `tutor-weekly`) before creating.
-- If a cron with that name exists (even if paused or with different schedule), do NOT create another.
-- Only create missing cron jobs. Report which ones already existed vs. were created.
-
-Daily cron: schedule `0 9 * * *`, deliver `telegram`, skill `tutor`
-Weekly cron: schedule `0 22 * * 0`, deliver `telegram`, skill `tutor`
-
-The prompt for each must contain the FULL content of the corresponding subskill (`daily.md` or `adapt.md`) inlined — cron sessions have zero context.
+Check by name (`tutor-daily`, `tutor-weekly`) via `cronjob(action="list")`. If missing, create:
+- Daily: `0 9 * * *` | Weekly: `0 22 * * 0`
+- Both: deliver `telegram`, skill `tutor`
+- Inline full subskill content (`daily.md` or `adapt.md`) — cron has zero context.
 
 ### 9. Send confirmation message
 ```
@@ -252,6 +117,6 @@ Type /tutor status anytime to check progress.
 ```
 
 ## Error Handling
-- If LLM generates invalid JSON: retry once with explicit "return valid JSON only"
-- If DB write fails: report error to user, do NOT leave partial state
-- If init_db.py hasn't been run: run it first, then proceed
+- Invalid JSON from LLM: retry once with "return valid JSON only"
+- DB write fails: report error, do NOT leave partial state
+- init_db.py not run: run it first, then proceed
