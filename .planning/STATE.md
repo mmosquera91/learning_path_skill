@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Usability & Upgrade Path
 status: executing
-stopped_at: Milestone v1.1 roadmap created
+stopped_at: Phase 06 context gathered, ready for planning
 last_updated: "2026-04-13T14:34:56.076Z"
 last_activity: 2026-04-13
 progress:
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-13)
 
 **Core value:** The Tutor skill reliably delivers a daily learning task, evaluates the user's submission, and progresses through the learning path — every day, without silent failures or broken state.
-**Current focus:** Phase 05 — readme-redesign
+**Current focus:** Phase 06 — upgrade-path
 
 ## Current Position
 
 Phase: 6
 Plan: Not started
-Status: Executing Phase 05
+Status: Context gathered, ready for planning
 Last activity: 2026-04-13
 
-Progress: [████████████████░░░░] 67%
+Progress: [██████████████████░░] 75%
 
 ## Performance Metrics
 
@@ -57,8 +57,8 @@ Decisions are logged in PROJECT.md Key Decisions table.
 
 ### Pending Todos
 
-- v1.1 Phase 5: README redesign — audit and rewrite
-- v1.1 Phase 6: Wire migrate_db.py into init.md, document and test upgrade path
+- v1.1 Phase 5: README redesign — audit and rewrite (COMPLETE)
+- v1.1 Phase 6: Wire migrate_db.py into init.md, document and test upgrade path (in progress)
 
 ### Blockers/Concerns
 
