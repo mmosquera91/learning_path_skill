@@ -1,77 +1,63 @@
 ---
-gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: milestone
-status: executing
-stopped_at: Phase 4 plan created
-last_updated: "2026-04-13T13:30:00.000Z"
-last_activity: 2026-04-13
+gsd_state_version: 1.1
+milestone: v1.1
+milestone_name: usability-upgrade
+status: Planning
+last_updated: "2026-04-13T17:00:00.000Z"
+last_activity: 2026-04-13 -- Milestone v1.1 roadmap created
 progress:
-  total_phases: 4
-  completed_phases: 3
-  total_plans: 11
-  completed_plans: 10
-  percent: 91
+  total_phases: 6
+  completed_phases: 4
+  total_plans: 0
+  completed_plans: 0
+  percent: 67
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-12)
+See: .planning/PROJECT.md (updated 2026-04-13)
 
-**Core value:** The Tutor skill reliably delivers a daily learning task, evaluates the user's submission, and progresses through the learning path -- every day, without silent failures or broken state.
-**Current focus:** Phase 4 -- security cleanup
+**Core value:** The Tutor skill reliably delivers a daily learning task, evaluates the user's submission, and progresses through the learning path — every day, without silent failures or broken state.
+**Current focus:** Milestone v1.1 — Usability & Upgrade Path
 
 ## Current Position
 
-Phase: 4
-Plan: 01
-Status: Plan created, awaiting execution
-Last activity: 2026-04-13
+Phase: 5 of 6 (README Redesign)
+Plan: —
+Status: Ready to plan
+Last activity: 2026-04-13 — Milestone v1.1 roadmap created
 
-Progress: [████████░░] 91%
+Progress: [████████████████░░░░] 67%
 
 ## Performance Metrics
 
-**Velocity:**
+**Velocity (v1.0):**
 
-- Total plans completed: 10
-- Average duration: -
-- Total execution time: 0 hours
+- Total plans completed: 11
+- Total execution time: ~1 day
+- Average plans/phase: ~2.75
 
-**By Phase:**
+**By Phase (v1.0):**
 
-| Phase | Plans | Total | Avg/Plan |
-|-------|-------|-------|----------|
-| 1. Foundation | 3 | 3 | - |
-| 2. Code Quality | 4 | 4 | - |
-| 03 | 3 | 3 | - |
-| 04 | 0 | 1 | - |
-
-**Recent Trend:**
-- Last 5 plans: 03-01, 03-02, 03-03, GAP-PLAN, 04-01
-- Trend: -
-
-*Updated after each plan completion*
+| Phase | Plans | Total | Status |
+|-------|-------|-------|--------|
+| 1. Foundation | 3 | 3 | Complete |
+| 2. Code Quality | 4 | 4 | Complete |
+| 3. Correctness | 3 | 3 | Complete |
+| 4. Security Cleanup | 1 | 1 | Complete |
 
 ## Accumulated Context
 
-### Decisions
+### Decisions (v1.0)
 
 Decisions are logged in PROJECT.md Key Decisions table.
-Recent decisions affecting current work:
-
-- Schema fix via migration (not fresh install) -- preserves existing learning progress
-- Deduplicate tier rules to CONTRIBUTING.md + validate_urls.py
-- Parameterize SQL instead of removing LIKE queries
-- Purge learning.db from git history (D-11: git filter-repo, D-12: --all branches, D-13: bundle backup first)
-- Fixed init_db.py regression directly (commit 83b687d8) -- restored v2 columns and config keys removed by Plan 01-03
 
 ### Pending Todos
 
-- Phase 03 remaining: FIX-01, FIX-02, FIX-03 still pending (03-03 gap closure planned but not executed)
-- Phase 04: Execute 04-01 to purge learning.db from git history
+- v1.1 Phase 5: README redesign — audit and rewrite
+- v1.1 Phase 6: Wire migrate_db.py into init.md, document and test upgrade path
 
 ### Blockers/Concerns
 
@@ -79,6 +65,5 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-13T13:30:00.000Z
-Stopped at: Phase 4 plan created
-Resume file: .planning/phases/04-security-cleanup/04-01-PLAN.md
+Last session: 2026-04-13T17:00:00.000Z
+Stopped at: Milestone v1.1 roadmap created
