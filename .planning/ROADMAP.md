@@ -62,8 +62,8 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 03-01: Template syntax (FIX-01) and command format fixes (FIX-02)
-- [ ] 03-02: Error handling in daily.md (FIX-03)
+- [x] 03-01: Template syntax (FIX-01) and command format fixes (FIX-02)
+- [x] 03-02: Error handling in daily.md (FIX-03)
 
 ### Phase 4: Security Cleanup
 **Goal**: learning.db is purged from all git history with no recoverable blob
