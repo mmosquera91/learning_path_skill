@@ -22,6 +22,10 @@ The Tutor skill reliably delivers a daily learning task, evaluates the user's su
 - ✓ SQLite schema with migration system — existing
 - ✓ Weekly adaptation review via cron — existing
 - ✓ Obsidian vault export — existing
+- ✓ eval.md uses consistent Mustache template syntax — Phase 03 (FIX-01)
+- ✓ syllabus.md uses correct command format (/tutor confirm, /tutor edit) — Phase 03 (FIX-02)
+- ✓ daily.md has error handling for task generation, DB write, and Telegram delivery failures — Phase 03 (FIX-03)
+- ✓ i18n support with locale config key and parameterized error messages — Phase 03 (gap closure)
 
 ### Active
 
@@ -30,9 +34,6 @@ The Tutor skill reliably delivers a daily learning task, evaluates the user's su
 - [ ] Tier system rules defined in one place, referenced elsewhere (not duplicated across 4+ files)
 - [ ] SKILL.md stays under 200 lines
 - [ ] init.md is slim enough to be inlined into cron without excessive context consumption
-- [ ] eval.md uses consistent template syntax (not broken Mustache variables)
-- [ ] syllabus template uses correct command format (/tutor confirm, /tutor edit)
-- [ ] daily.md has error handling for task generation, DB write, and Telegram delivery failures
 - [ ] Stale cron prompts are detectable (version hash or timestamp check)
 - [ ] SQL queries use parameterized patterns or safe escaping for LIKE clauses
 - [ ] learning.db is purged from git history
@@ -89,4 +90,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-12 after initialization*
+*Last updated: 2026-04-13 after Phase 03 completion*
