@@ -59,11 +59,11 @@ Plans:
   1. eval.md uses a single consistent placeholder format throughout (no mixing of Mustache and plain text)
   2. daily.md produces a Telegram message or logs a specific error when task generation, DB write, or Telegram delivery fails
   3. Syllabus template output references `/tutor confirm` and `/tutor edit` (not any other command format)
-**Plans:** TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 03-01: Template syntax and command format fixes
-- [ ] 03-02: Error handling in daily.md
+- [ ] 03-01: Template syntax (FIX-01) and command format fixes (FIX-02)
+- [ ] 03-02: Error handling in daily.md (FIX-03)
 
 ### Phase 4: Security Cleanup
 **Goal**: learning.db is purged from all git history with no recoverable blob
