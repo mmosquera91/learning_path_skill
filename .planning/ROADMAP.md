@@ -61,7 +61,7 @@
 |-------|-----------|----------------|--------|-----------|
 | 1. Foundation | v1.0 | 3/3 | Complete | 2026-04-13 |
 | 2. Code Quality | v1.0 | 4/4 | Complete | 2026-04-13 |
-| 3. Correctness | v1.0 | 2/3 | Complete | 2026-04-13 |
+| 3. Correctness | v1.0 | 4/4 | Complete | 2026-04-13 |
 | 4. Security Cleanup | v1.0 | 1/1 | Complete | 2026-04-13 |
 | 5. README Redesign | v1.1 | 0/1 | Not started | - |
 | 6. Upgrade Path | v1.1 | 1/1 | Complete    | 2026-04-13 |
