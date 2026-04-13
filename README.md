@@ -62,12 +62,12 @@ You: /tutor submit
      print(type(name), type(age), type(height), type(is_student))
 
 Tutor: 📋 Evaluation — Variables & Data Types
-       Score: 4.5/10
-       
-       ❌ age/12 divides age by 12 (2.25 months?) — you wanted age*12 
+       Score: 6/10
+
+       ❌ age/12 divides age by 12 (2.25 months?) — you wanted age*12
           for age in months
        ❌ Hardcoded 1.65 instead of using the height variable
-       
+
        ✅ Correct variable types declared
        ✅ Correct use of f-strings
        
