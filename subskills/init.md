@@ -5,11 +5,12 @@ User sends: `/tutor init <topic>` or "quiero aprender <topic>"
 
 ## Steps
 
-### 0. Ensure database exists
-```bash
+### 0. Ensure database exists and migrate if needed
+# Migrate existing v1 DBs to v2 schema (before init_db.py touches them)
+python3 ~/.hermes/skills/tutor/scripts/migrate_db.py --check
+# Ensure DB exists (idempotent - safe to run every time)
 python3 ~/.hermes/skills/tutor/scripts/init_db.py
 ```
-Idempotent — safe to run every time.
 
 ### 1. Check for existing active path
 ```bash
