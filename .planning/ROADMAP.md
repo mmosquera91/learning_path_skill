@@ -41,7 +41,7 @@
   3. Example session reflects actual `/tutor init` -> `/tutor daily` -> `/tutor eval` flow
   4. Command formats (e.g., `/tutor confirm`, `/tutor edit`) match actual SKILL.md
 **Plans**: 1 plan
-- [ ] 05-01-PLAN.md — Audit README.md against source files and rewrite with all corrections
+- [x] 05-01-PLAN.md — Audit README.md against source files and rewrite with all corrections
 
 ### Phase 6: Upgrade Path
 **Goal**: Wire migration into init flow and document upgrade path for existing users.
