@@ -38,12 +38,10 @@ The Tutor skill reliably delivers a daily learning task, evaluates the user's su
 - ✓ All documented DB columns exist in actual schema — Phase 01 (SCHEMA-01)
 - ✓ All documented config keys are initialized — Phase 01 (SCHEMA-02)
 - ✓ README accurately reflects current implementation state — Phase 05 (README-01, README-02)
+- ✓ init.md calls migrate_db.py before init_db.py (automatic schema migration on upgrade) — Phase 06 (MIGRATE-01)
+- ✓ Upgrade path documented and tested for existing users — Phase 06 (UPGRADE-01, UPGRADE-02)
 
 ### Active
-
-- [ ] README accurately reflects current implementation state
-- [ ] init.md calls migrate_db.py before init_db.py (automatic schema migration on upgrade)
-- [ ] Upgrade path documented and tested for existing users
 
 ### Out of Scope
 
