@@ -59,11 +59,12 @@ Plans:
   1. eval.md uses a single consistent placeholder format throughout (no mixing of Mustache and plain text)
   2. daily.md produces a Telegram message or logs a specific error when task generation, DB write, or Telegram delivery fails
   3. Syllabus template output references `/tutor confirm` and `/tutor edit` (not any other command format)
-**Plans:** 2 plans
+**Plans:** 3 plans
 
 Plans:
 - [x] 03-01: Template syntax (FIX-01) and command format fixes (FIX-02)
 - [x] 03-02: Error handling in daily.md (FIX-03)
+- [ ] 03-03: i18n support for error messages (GAP: hardcoded Spanish)
 
 ### Phase 4: Security Cleanup
 **Goal**: learning.db is purged from all git history with no recoverable blob
@@ -86,5 +87,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 |-------|----------------|--------|-----------|
 | 1. Foundation | 3/3 | Complete | 2026-04-13 |
 | 2. Code Quality | 4/4 | Complete   | 2026-04-13 |
-| 3. Correctness | 0/2 | Not started | - |
+| 3. Correctness | 2/3 | Not started | - |
 | 4. Security Cleanup | 0/1 | Not started | - |
