@@ -13,7 +13,7 @@ Harden the existing Hermes Tutor skill by fixing the schema-documentation mismat
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation** - Schema alignment, test suite, input validation, and SQL safety
-- [ ] **Phase 2: Code Quality** - Tier rule deduplication and context budget reduction
+- [x] **Phase 2: Code Quality** - Tier rule deduplication and context budget reduction (completed 2026-04-13)
 - [ ] **Phase 3: Correctness** - Template syntax fixes, error handling, and command format corrections
 - [ ] **Phase 4: Security Cleanup** - Git history purge
 
@@ -45,11 +45,11 @@ Plans:
   1. Tier classification rules are defined in CONTRIBUTING.md and validate_urls.py only -- SKILL.md and init.md reference them instead of containing inline copies
   2. `wc -l SKILL.md` reports fewer than 200 lines and the skill routes commands correctly
   3. `wc -l subskills/init.md` reports fewer than 150 lines and the init flow (syllabus generation, URL validation, path activation) still works end-to-end
-**Plans:** TBD
+**Plans:** 4/4 plans complete
 
 Plans:
-- [ ] 02-01: Tier rule deduplication and SKILL.md reduction
-- [ ] 02-02: init.md extraction (syllabus prompt to template, save logic to script)
+- [x] 02-01: Tier rule deduplication and SKILL.md reduction
+- [x] 02-02: init.md extraction (syllabus prompt to template, save logic to script)
 
 ### Phase 3: Correctness
 **Goal**: Subskill templates use consistent syntax, daily.md handles failures gracefully, and syllabus commands reference the correct format
@@ -85,6 +85,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 3/3 | Complete | 2026-04-13 |
-| 2. Code Quality | 0/2 | Not started | - |
+| 2. Code Quality | 4/4 | Complete   | 2026-04-13 |
 | 3. Correctness | 0/2 | Not started | - |
 | 4. Security Cleanup | 0/1 | Not started | - |
