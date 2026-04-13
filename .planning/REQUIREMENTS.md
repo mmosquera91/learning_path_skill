@@ -28,7 +28,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Code Quality
 
-- [ ] **DEDUP-01**: Tier system rules are defined in one canonical location (CONTRIBUTING.md + validate_urls.py), referenced by SKILL.md and init.md instead of duplicated inline
+- [x] **DEDUP-01**: Tier system rules are defined in one canonical location (CONTRIBUTING.md + validate_urls.py), referenced by SKILL.md and init.md instead of duplicated inline
 - [ ] **QUAL-01**: init.md is reduced to under 150 lines by extracting syllabus generation prompt to a template and save-to-DB logic to a Python script
 - [ ] **QUAL-02**: SKILL.md is under 200 lines after tier rule deduplication and any additional trimming
 
@@ -91,7 +91,7 @@ Deferred to future release. Tracked but not in current roadmap.
 | SEC-01 | Phase 1 | Pending |
 | SEC-02 | Phase 1 | Pending |
 | FIX-04 | Phase 1 | Pending |
-| DEDUP-01 | Phase 2 | Pending |
+| DEDUP-01 | Phase 2 | Complete |
 | QUAL-01 | Phase 2 | Pending |
 | QUAL-02 | Phase 2 | Pending |
 | FIX-01 | Phase 3 | Pending |
