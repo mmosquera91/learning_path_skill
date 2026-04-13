@@ -6,7 +6,7 @@ A personal AI tutor skill for [Hermes Agent](https://github.com/NousResearch/her
 
 1. **Generates a syllabus** from any topic (e.g., "I want to learn Rust") — modules, resources, milestones, estimated duration
 2. **Sends a daily task** via Telegram at 9:00 AM using a cron job
-3. **Evaluates responses** with a two-axis rubric (conceptual comprehension + application ability, 1-10)
+3. **Evaluates responses** with a structured rubric (1-10 score with specific feedback)
 4. **Adapts the plan** — accelerates on high scores, repeats weak areas, decomposes modules on low scores
 5. **Weekly review** every Sunday at 10 PM with metrics and recommendations
 6. **Spaced repetition** — completed modules get reviewed at increasing intervals *(implemented but not yet validated end-to-end)*
@@ -70,7 +70,6 @@ Tutor: 📋 Evaluation — Variables & Data Types
        
        ✅ Correct variable types declared
        ✅ Correct use of f-strings
-       ✅ type() used correctly
        
        Decision: REPEAT — Let's reinforce this. A new task will focus 
        on the areas that need work.
@@ -145,7 +144,7 @@ The database initializes automatically on first use.
 
 ### Cron Jobs
 
-Cron jobs are created **automatically** when you run `/confirm` after `/tutor init`. You don't need to set them up manually.
+Cron jobs are created **automatically** when you run `/tutor confirm` after `/tutor init`. You don't need to set them up manually.
 
 If you ever need to recreate them (e.g., after a reset), ask your agent:
 
@@ -153,7 +152,7 @@ If you ever need to recreate them (e.g., after a reset), ask your agent:
 
 The agent will call the `cronjob` tool with the full self-contained prompts from `subskills/daily.md` and `subskills/adapt.md`. Those prompts include all SQL queries and step-by-step logic — no prior session context needed.
 
-> **Why not manual `hermes cron create`?** The prompts are ~500 lines each (all the SQL + decision logic). The cronjob tool handles this correctly when called programmatically, but typing them in a shell would be impractical. The agent does it for you during `/confirm`.
+> **Why not manual `hermes cron create`?** The prompts are ~500 lines each (all the SQL + decision logic). The cronjob tool handles this correctly when called programmatically, but typing them in a shell would be impractical. The agent does it for you during `/tutor confirm`.
 
 ### Obsidian Integration (Optional)
 
@@ -167,22 +166,25 @@ Exports will be saved to `$OBSIDIAN_VAULT_PATH/Learning/`.
 
 ## Evaluation Rubric
 
-Every submission is scored on two axes (1-10):
+Every submission is scored on a single 1-10 scale with specific, constructive feedback:
 
-| Axis | 1-3 | 4-5 | 6-7 | 8-9 | 10 |
-|------|-----|-----|-----|-----|----|
-| **Conceptual Comprehension** | Cannot explain core concept | Partial, significant gaps | Solid, minor gaps | Deep, handles edge cases | Expert, cross-domain |
-| **Application Ability** | Cannot apply even with help | Can apply with substantial help | Independent on standard problems | Handles novel problems | Can teach and optimize |
+| Score | Meaning |
+|-------|---------|
+| 1-3 | Cannot apply even with help; significant conceptual gaps |
+| 4-5 | Can apply with substantial help; major gaps |
+| 6-7 | Independent on standard problems; minor gaps |
+| 8-9 | Handles novel problems; deep understanding |
+| 10 | Can teach, optimize, and cross-domain |
 
 **Decision rules:**
-- Average >= 7.0 → Advance to next module
-- Average 4.0-6.9 → Repeat with clarification
-- Average < 4.0 → Decompose into sub-modules
+- Score >= 7.0 → Advance to next module
+- Score 4.0-6.9 → Repeat with clarification
+- Score < 4.0 → Decompose into sub-modules
 
 **Spaced repetition:**
 - Score >= 8 → Review in 7 days
-- Score 5-7.9 → Review in 3 days
-- Score < 5 → Review next session
+- Score 5.0-7.9 → Review in 3 days
+- Score < 5.0 → Review next session
 
 ## Inactivity Handling
 
@@ -210,7 +212,7 @@ These are the non-obvious problems we hit and how we solved them. If you're buil
 | Decision | Choice | Why |
 |----------|--------|-----|
 | Persona in SKILL.md, not separate profile | Cron jobs run on default profile — Hermes has no `--profile` flag for cron | Embedding the persona in the skill keeps it self-contained. A separate profile would be cleaner but the cron layer doesn't support it. |
-| Explicit /submit command | A casual message like "what is a lifetime in Rust?" would get evaluated as a task submission | 20h response window as fallback (asks for confirmation before evaluating), but /submit is the primary path. Without this, every question becomes an evaluation. |
+| Explicit /tutor submit command | A casual message like "what is a lifetime in Rust?" would get evaluated as a task submission | 20h response window as fallback (asks for confirmation before evaluating), but /tutor submit is the primary path. Without this, every question becomes an evaluation. |
 | Skill split into 4 subskills | A single SKILL.md with all the logic would be 500+ lines | Local models (Ollama) struggle with long prompts. The router pattern keeps context lean — SKILL.md is ~180 lines, subskills are loaded on demand. |
 | SQLite over JSON files | Concurrent access, atomic writes, querying | WAL mode handles the write pattern (cron writes, agent reads). JSON files would need manual locking. |
 | LLM outputs structured JSON for evaluations | Free-form text evaluation leads to inconsistent scoring | JSON schema forces the model to commit to numbers and specific feedback. Easier to parse, store, and compare. |
@@ -224,7 +226,7 @@ These are the non-obvious problems we hit and how we solved them. If you're buil
 - No progress sync across devices (single SQLite file)
 - `/tutor switch` requires at least 2 paths to exist
 - Obsidian export requires `OBSIDIAN_VAULT_PATH` to be set in `~/.hermes/.env`
-- The `/confirm` step should create cron jobs automatically — currently this requires the agent to have cronjob tool access during the init flow
+- The `/tutor confirm` step should create cron jobs automatically — currently this requires the agent to have cronjob tool access during the init flow
 
 ## Roadmap
 
