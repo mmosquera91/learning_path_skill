@@ -143,6 +143,10 @@ Then start with:
 
 The database initializes automatically on first use.
 
+### Upgrading from v1.0
+
+If you're upgrading from v1.0, the migration runs automatically when you first run `/tutor init`. All your existing learning paths, modules, and progress are preserved — no data loss. The migration adds new columns (score tracking, spaced repetition dates) and initializes new config keys. No action required on your part.
+
 ### Cron Jobs
 
 Cron jobs are created **automatically** when you run `/confirm` after `/tutor init`. You don't need to set them up manually.
