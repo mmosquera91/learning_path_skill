@@ -86,7 +86,9 @@ try:
     # LLM task generation (Step 6)
     # If LLM fails or returns invalid JSON:
     #   - Retry once with: "Output valid JSON only, no markdown, no explanation"
-    #   - If retry fails: send user message "No pude generar la tarea. Intenta de nuevo mas tarde." and END
+    #   - If retry fails: report error in user's language (check config.locale):
+#     - locale=es or not set: "No pude generar la tarea. Intenta de nuevo mas tarde."
+#     - locale=en: "I could not generate the task. Please try again later."
 except Exception:
     # Report error to user, do NOT write to DB or send Telegram
 ```
@@ -107,7 +109,9 @@ UPDATE config SET value=? WHERE key='pending_task_id';
 try:
     # Database write (Step 7)
     # If sqlite3.OperationalError or other DB error:
-    #   - Report error: "Error al guardar la tarea. Intenta de nuevo mas tarde."
+    #   - Report error in user's language (check config.locale):
+#     - locale=es or not set: "Error al guardar la tarea. Intenta de nuevo mas tarde."
+#     - locale=en: "Failed to save the task. Please try again later."
     #   - Do NOT send Telegram if DB write fails
     #   - Do NOT leave partial state
 except sqlite3.OperationalError:
@@ -128,7 +132,9 @@ Responde con /submit <tu respuesta>
 try:
     # Telegram delivery (Step 8)
     # If Hermes deliver fails:
-    #   - Report error: "No pude enviar la tarea. Intentare de nuevo manana."
+    #   - Report error in user's language (check config.locale):
+#     - locale=es or not set: "No pude enviar la tarea. Intentare de nuevo manana."
+#     - locale=en: "I could not send the task. I will try again tomorrow."
     #   - Do NOT mark task as sent if delivery fails
 except Exception:
     # Report error to user, retry tomorrow
