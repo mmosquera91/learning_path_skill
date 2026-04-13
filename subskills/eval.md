@@ -14,7 +14,9 @@ WHERE t.awaiting_response = 1
 ORDER BY t.date DESC LIMIT 1;
 ```
 
-If no pending task: "No hay tarea pendiente. Usa /tutor status para ver tu progreso."
+If no pending task, report in user's language (check config.locale):
+- locale=es or not set: "No hay tarea pendiente. Usa /tutor status para ver tu progreso."
+- locale=en: "No pending task. Use /tutor status to check your progress."
 
 ### 2. Evaluate the submission
 Prompt the LLM to evaluate:
@@ -63,11 +65,15 @@ WHERE id = ?;
 If score >= 7:
 - Mark module as completed
 - Update streak count in config
-- Send: "✅ Módulo completado: {module_title}"
+- Send completion message in user's language (check config.locale):
+  - locale=es or not set: "✅ Módulo completado: {module_title}"
+  - locale=en: "✅ Module completed: {module_title}"
 
 If score < 7:
 - Increment times_repeated
-- Send: "📚 Sigue practicando. Revisarás este módulo mañana."
+- Send keep-practicing message in user's language (check config.locale):
+  - locale=es or not set: "📚 Sigue practicando. Revisarás este módulo mañana."
+  - locale=en: "📚 Keep practicing. You will review this module tomorrow."
 
 ### 6. Send feedback
 ```
@@ -78,10 +84,10 @@ Puntuación: {{score}}/10
 {{feedback}}
 
 {{#completed}}
-✅ ¡Módulo completado!
+✅ {{#es}}¡Módulo completado!{{/es}}{{#en}}Module completed!{{/en}}
 {{/completed}}
 {{^completed}}
-📚 Revisaremos este tema mañana.
+📚 {{#es}}Revisaremos este tema mañana.{{/es}}{{#en}}We will review this topic tomorrow.{{/en}}
 {{/completed}}
 ```
 
