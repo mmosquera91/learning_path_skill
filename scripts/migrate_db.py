@@ -144,6 +144,29 @@ def migrate(db_path: str = DB_PATH):
     conn.close()
 
 
+def check_and_migrate(db_path: str = DB_PATH):
+    """Check schema version and migrate if needed. Silent on fresh DB."""
+    if not os.path.exists(db_path):
+        # Fresh DB - init_db.py will create it. Silent success.
+        return
+    conn = sqlite3.connect(db_path)
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA foreign_keys=ON")
+    conn.execute("PRAGMA busy_timeout=5000")
+    current = get_current_version(conn)
+    if current == EXPECTED_VERSION:
+        print(f"Already at schema v{current}.")
+        conn.close()
+        return
+    if current > EXPECTED_VERSION:
+        print(f"DB schema v{current} is newer than expected v{EXPECTED_VERSION}.")
+        print("This might mean you're running an older version of the skill.")
+        conn.close()
+        sys.exit(1)
+    conn.close()
+    migrate(db_path)
+
+
 def migrate_down(db_path: str = DB_PATH):
     """Down-migrate from current version to previous version."""
     if not os.path.exists(db_path):
@@ -206,11 +229,14 @@ def migrate_down(db_path: str = DB_PATH):
 if __name__ == "__main__":
     path = DB_PATH
     down = "--down" in sys.argv
+    check = "--check" in sys.argv
     if "--db" in sys.argv:
         idx = sys.argv.index("--db")
         if idx + 1 < len(sys.argv):
             path = sys.argv[idx + 1]
-    if down:
+    if check:
+        check_and_migrate(path)
+    elif down:
         migrate_down(path)
     else:
         migrate(path)
