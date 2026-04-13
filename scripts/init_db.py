@@ -97,6 +97,7 @@ def init_db():
         ('daily_count', '0'),
         ('weekly_count', '0'),
         ('response_window_end', ''),
+        ('locale', 'es'),
     ]
     for key, value in defaults:
         c.execute('INSERT OR IGNORE INTO config (key, value) VALUES (?, ?)', (key, value))
