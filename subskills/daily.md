@@ -80,6 +80,17 @@ Output format:
 }
 ```
 
+**Error handling:**
+```python
+try:
+    # LLM task generation (Step 6)
+    # If LLM fails or returns invalid JSON:
+    #   - Retry once with: "Output valid JSON only, no markdown, no explanation"
+    #   - If retry fails: send user message "No pude generar la tarea. Intenta de nuevo mas tarde." and END
+except Exception:
+    # Report error to user, do NOT write to DB or send Telegram
+```
+
 ### 7. Save task to database
 ```sql
 INSERT INTO daily_tasks (module_id, date, content, awaiting_response)
@@ -91,6 +102,18 @@ Get the task ID and save to config:
 UPDATE config SET value=? WHERE key='pending_task_id';
 ```
 
+**Error handling:**
+```python
+try:
+    # Database write (Step 7)
+    # If sqlite3.OperationalError or other DB error:
+    #   - Report error: "Error al guardar la tarea. Intenta de nuevo mas tarde."
+    #   - Do NOT send Telegram if DB write fails
+    #   - Do NOT leave partial state
+except sqlite3.OperationalError:
+    # Rollback if needed, report error, do NOT leave partial state
+```
+
 ### 8. Send to user via Telegram
 ```
 📚 Tarea del día — {module_title}
@@ -98,6 +121,17 @@ UPDATE config SET value=? WHERE key='pending_task_id';
 {task_content}
 
 Responde con /submit <tu respuesta>
+```
+
+**Error handling:**
+```python
+try:
+    # Telegram delivery (Step 8)
+    # If Hermes deliver fails:
+    #   - Report error: "No pude enviar la tarea. Intentare de nuevo manana."
+    #   - Do NOT mark task as sent if delivery fails
+except Exception:
+    # Report error to user, retry tomorrow
 ```
 
 ## Quiet Hours
