@@ -24,7 +24,10 @@ row = c.fetchone()
 if row and row[0]:
     c.execute('SELECT topic, status FROM paths WHERE id=?', (row[0],))
     p = c.fetchone()
-    print(f'ACTIVE_PATH: {p[0]} (status: {p[1]})')
+    if p:
+        print(f'ACTIVE_PATH: {p[0]} (status: {p[1]})')
+    else:
+        print('NO_ACTIVE_PATH')
 else:
     print('NO_ACTIVE_PATH')
 conn.close()
