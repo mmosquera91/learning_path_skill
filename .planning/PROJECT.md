@@ -26,21 +26,24 @@ The Tutor skill reliably delivers a daily learning task, evaluates the user's su
 - ✓ syllabus.md uses correct command format (/tutor confirm, /tutor edit) — Phase 03 (FIX-02)
 - ✓ daily.md has error handling for task generation, DB write, and Telegram delivery failures — Phase 03 (FIX-03)
 - ✓ i18n support with locale config key and parameterized error messages — Phase 03 (gap closure)
+- ✓ SKILL.md stays under 200 lines — Phase 02 (QUAL-02)
+- ✓ init.md is slim enough to be inlined into cron without excessive context consumption — Phase 02 (QUAL-01)
+- ✓ Tier system rules defined in one place, referenced elsewhere (not duplicated across 4+ files) — Phase 02 (DEDUP-01)
+- ✓ SQL LIKE clauses use parameterized patterns with ESCAPE — Phase 01 (FIX-04)
+- ✓ User submissions validated with CHECK constraint on response length — Phase 01 (SEC-01)
+- ✓ learning.db has restricted file permissions (600) — Phase 01 (SEC-02)
+- ✓ learning.db is purged from git history — Phase 04 (SEC-03)
+- ✓ Automated tests cover DB operations, state transitions, URL validation, and eval pipeline — Phase 01 (TEST-01 through TEST-05)
+- ✓ AGENTS.md documentation matches actual schema and code — Phase 01 (SCHEMA-03)
+- ✓ All documented DB columns exist in actual schema — Phase 01 (SCHEMA-01)
+- ✓ All documented config keys are initialized — Phase 01 (SCHEMA-02)
+- ✓ README accurately reflects current implementation state — Phase 05 (README-01, README-02)
 
 ### Active
 
-- [ ] All documented DB columns exist in actual schema (next_review_date, score, response_window_end, feedback)
-- [ ] All documented config keys are initialized (last_task_date, daily_count, weekly_count, response_window_end)
-- [ ] Tier system rules defined in one place, referenced elsewhere (not duplicated across 4+ files)
-- [ ] SKILL.md stays under 200 lines
-- [ ] init.md is slim enough to be inlined into cron without excessive context consumption
-- [ ] Stale cron prompts are detectable (version hash or timestamp check)
-- [ ] SQL queries use parameterized patterns or safe escaping for LIKE clauses
-- [ ] learning.db is purged from git history
-- [ ] User submissions are validated (length limits, sanitization) before DB storage
-- [ ] learning.db has restricted file permissions (600)
-- [ ] Automated tests cover DB operations, state transitions, URL validation, and eval pipeline
-- [ ] AGENTS.md documentation matches actual schema and code
+- [ ] README accurately reflects current implementation state
+- [ ] init.md calls migrate_db.py before init_db.py (automatic schema migration on upgrade)
+- [ ] Upgrade path documented and tested for existing users
 
 ### Out of Scope
 
@@ -49,6 +52,15 @@ The Tutor skill reliably delivers a daily learning task, evaluates the user's su
 - Spaced repetition review delivery — depends on schema fix but implementation is separate
 - Interactive UI or multi-user support — future v2 direction
 - Hermes v0.7 slash command workarounds — already resolved by skill rename
+
+## Current Milestone: v1.1 Usability & Upgrade Path
+
+**Goal:** Make the project usable for new adopters and safe for existing users upgrading from v1.0.
+
+**Target features:**
+- README redesign — Honest, accurate docs that reflect current state. Remove untested features, fix setup instructions, add real example session.
+- DB migration wired into init flow — `subskills/init.md` calls `migrate_db.py` before `init_db.py`. Existing users with schema v1 get migrated automatically, preserving learning data.
+- Upgrade path testing — Document and test what existing users upgrading from v1.0 should expect.
 
 ## Context
 
@@ -67,10 +79,10 @@ The Tutor skill is a working Hermes Agent skill used for personal learning. It r
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Fix schema via migration, not fresh install | Existing learning progress must be preserved | — Pending |
-| Deduplicate tier rules to CONTRIBUTING.md + validate_urls.py | These are the natural homes; subskills and router reference them | — Pending |
-| Parameterize SQL instead of removing LIKE queries | LIKE is useful for search; parameterized queries are the safe pattern | — Pending |
-| Purge learning.db from git history | Contains user data; removal from working tree wasn't enough | — Pending |
+| Fix schema via migration, not fresh install | Existing learning progress must be preserved | v1.0 Phase 01 |
+| Deduplicate tier rules to CONTRIBUTING.md + validate_urls.py | These are the natural homes; subskills and router reference them | v1.0 Phase 02 |
+| Parameterize SQL instead of removing LIKE queries | LIKE is useful for search; parameterized queries are the safe pattern | v1.0 Phase 01 |
+| Purge learning.db from git history | Contains user data; removal from working tree wasn't enough | v1.0 Phase 04 |
 
 ## Evolution
 
@@ -90,4 +102,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-13 after Phase 03 completion*
+*Last updated: 2026-04-13 after v1.0 milestone completion*
