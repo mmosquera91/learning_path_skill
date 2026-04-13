@@ -16,3 +16,6 @@ Thumbs.db
 
 # Python
 __pycache__/
+
+# GSD workflow
+.planning/
