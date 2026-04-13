@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Usability & Upgrade Path
 status: executing
-stopped_at: Phase 06 context gathered, ready for planning
-last_updated: "2026-04-13T14:34:56.076Z"
+stopped_at: Milestone v1.1 roadmap created
+last_updated: "2026-04-13T15:23:24.505Z"
 last_activity: 2026-04-13
 progress:
   total_phases: 2
-  completed_phases: 1
-  total_plans: 1
-  completed_plans: 1
+  completed_phases: 2
+  total_plans: 2
+  completed_plans: 2
   percent: 100
 ---
 
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-13)
 
 **Core value:** The Tutor skill reliably delivers a daily learning task, evaluates the user's submission, and progresses through the learning path — every day, without silent failures or broken state.
-**Current focus:** Phase 06 — upgrade-path
+**Current focus:** Phase 6 — upgrade-path
 
 ## Current Position
 
 Phase: 6
 Plan: Not started
-Status: Context gathered, ready for planning
+Status: Executing Phase 6
 Last activity: 2026-04-13
 
 Progress: [██████████████████░░] 75%
@@ -36,7 +36,7 @@ Progress: [██████████████████░░] 75%
 
 **Velocity (v1.0):**
 
-- Total plans completed: 12
+- Total plans completed: 13
 - Total execution time: ~1 day
 - Average plans/phase: ~2.75
 

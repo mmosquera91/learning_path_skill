@@ -27,7 +27,7 @@
 ---
 
 - [ ] **Phase 5: README Redesign** - Audit and rewrite README.md to accurately reflect current implementation
-- [ ] **Phase 6: Upgrade Path** - Wire migration into init flow and document upgrade path for existing users
+- [x] **Phase 6: Upgrade Path** - Wire migration into init flow and document upgrade path for existing users (completed 2026-04-13)
 
 ## Phase Details
 
@@ -53,7 +53,7 @@
   3. Upgrade path documented in README.md (what to expect, what is preserved)
   4. End-to-end test confirms schema v1 -> v2 migration preserves all data
 **Plans**: 1 plan
-- [ ] 06-01-PLAN.md — Wire migrate --check into init, add tests, document upgrade path
+- [x] 06-01-PLAN.md — Wire migrate --check into init, add tests, document upgrade path
 
 ## Progress
 
@@ -64,4 +64,4 @@
 | 3. Correctness | v1.0 | 2/3 | Complete | 2026-04-13 |
 | 4. Security Cleanup | v1.0 | 1/1 | Complete | 2026-04-13 |
 | 5. README Redesign | v1.1 | 0/1 | Not started | - |
-| 6. Upgrade Path | v1.1 | 0/1 | Not started | - |
+| 6. Upgrade Path | v1.1 | 1/1 | Complete    | 2026-04-13 |
