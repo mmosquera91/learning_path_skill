@@ -29,14 +29,41 @@ If no active path: **END IMMEDIATELY — NO OUTPUT, NO MESSAGE**
 - Do NOT generate any response
 - Exit with empty output (user hasn't started a path yet)
 
-### 3. Check for existing pending task
+### 3. Check for path paused status
+```sql
+SELECT status FROM paths WHERE id = (SELECT value FROM config WHERE key='active_path_id');
+```
+If status = 'paused': **END SILENTLY** — path was manually or auto-paused, do not send any message.
+
+### 4. Check for existing pending task
 ```sql
 SELECT id FROM daily_tasks WHERE awaiting_response = 1;
 ```
 
 If exists: skip (don't create duplicate)
 
-### 4. Find next module to work on
+### 5. Check inactivity and auto-pause
+```sql
+SELECT value FROM config WHERE key='last_response_date';
+```
+Calculate days since last response using `julianday('now') - julianday(value)`:
+- **2 days:** Send nudge (in user's locale):
+  - locale=es: "👋 Llevas un par de días sin actividad. ¿Listo para la tarea de hoy? O /tutor skip si estás ocupado."
+  - locale=en: "👋 You haven't been active for a couple of days. Ready for today's task? Or /tutor skip if you're busy."
+- **3 days:** Send offer to pause (in user's locale):
+  - locale=es: "Parece que has estado ocupado. ¿Quieres /tutor pause y volver después?"
+  - locale=en: "You seem to have been busy. Want to /tutor pause and come back later?"
+- **5+ days:** Auto-pause and notify:
+  ```sql
+  UPDATE paths SET status='paused', is_active=0 WHERE id = (SELECT value FROM config WHERE key='active_path_id');
+  UPDATE config SET value='' WHERE key='active_path_id';
+  ```
+  Send (in user's locale):
+  - locale=es: "He pausado tu learning path tras {days} días de inactividad. Usa /tutor resume cuando estés listo."
+  - locale=en: "I've paused your learning path after {days} days of inactivity. Use /tutor resume when you're ready."
+  **END** — do not send a task
+
+### 6. Find next module to work on
 ```sql
 SELECT id, title, description, module_order
 FROM modules
@@ -53,12 +80,12 @@ WHERE id = (SELECT value FROM config WHERE key='active_path_id');
 ```
 Send: "🎉 ¡Felicitaciones! Has completado tu plan de aprendizaje. Usa /tutor init para comenzar uno nuevo."
 
-### 5. Get resources for the module
+### 7. Get resources for the module
 ```sql
 SELECT url, title, type FROM resources WHERE module_id = ?;
 ```
 
-### 6. Generate daily task content
+### 8. Generate daily task content
 Use LLM to generate a specific, actionable task:
 
 ```
@@ -83,7 +110,7 @@ Output format:
 **Error handling:**
 ```python
 try:
-    # LLM task generation (Step 6)
+    # LLM task generation (Step 8)
     # If LLM fails or returns invalid JSON:
     #   - Retry once with: "Output valid JSON only, no markdown, no explanation"
     #   - If retry fails: report error in user's language (check config.locale):
@@ -93,7 +120,7 @@ except Exception:
     # Report error to user, do NOT write to DB or send Telegram
 ```
 
-### 7. Save task to database
+### 9. Save task to database
 ```sql
 INSERT INTO daily_tasks (module_id, date, content, awaiting_response)
 VALUES (?, date('now'), ?, 1);
@@ -107,7 +134,7 @@ UPDATE config SET value=? WHERE key='pending_task_id';
 **Error handling:**
 ```python
 try:
-    # Database write (Step 7)
+    # Database write (Step 9)
     # If sqlite3.OperationalError or other DB error:
     #   - Report error in user's language (check config.locale):
 #     - locale=es or not set: "Error al guardar la tarea. Intenta de nuevo mas tarde."
@@ -118,7 +145,7 @@ except sqlite3.OperationalError:
     # Rollback if needed, report error, do NOT leave partial state
 ```
 
-### 8. Send to user via Telegram
+### 10. Send to user via Telegram
 ```
 📚 Tarea del día — {module_title}
 
@@ -130,7 +157,7 @@ Responde con /submit <tu respuesta>
 **Error handling:**
 ```python
 try:
-    # Telegram delivery (Step 8)
+    # Telegram delivery (Step 10)
     # If Hermes deliver fails:
     #   - Report error in user's language (check config.locale):
 #     - locale=es or not set: "No pude enviar la tarea. Intentare de nuevo manana."

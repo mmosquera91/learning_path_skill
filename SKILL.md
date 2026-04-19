@@ -128,6 +128,7 @@ If found:
 ```sql
 UPDATE paths SET status = 'active', is_active = 1 WHERE id = {path_id};
 UPDATE config SET value = '{path_id}' WHERE key = 'active_path_id';
+UPDATE config SET value = date('now') WHERE key = 'last_response_date';
 ```
 Send: "▶️ Resumed: {topic}. Next task comes tomorrow at 9 AM."
 
