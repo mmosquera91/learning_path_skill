@@ -128,6 +128,7 @@ def migrate(db_path: str = DB_PATH):
 
         # Update version
         if current == 0:
+            cursor.execute("CREATE TABLE IF NOT EXISTS schema_version (version INTEGER)")
             cursor.execute(
                 "INSERT INTO schema_version (version) VALUES (?)",
                 (target_version,),
