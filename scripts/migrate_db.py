@@ -17,7 +17,7 @@ import sys
 
 DB_PATH = os.path.expanduser("~/.hermes/skills/tutor/learning.db")
 
-EXPECTED_VERSION = 2
+EXPECTED_VERSION = 3
 
 # Each key = version we're migrating TO
 # Value = list of SQL statements to run
@@ -128,6 +128,7 @@ def migrate(db_path: str = DB_PATH):
 
         # Update version
         if current == 0:
+            cursor.execute("CREATE TABLE IF NOT EXISTS schema_version (version INTEGER)")
             cursor.execute(
                 "INSERT INTO schema_version (version) VALUES (?)",
                 (target_version,),
@@ -145,7 +146,7 @@ def migrate(db_path: str = DB_PATH):
 
 
 def check_and_migrate(db_path: str = DB_PATH):
-    """Check schema version and migrate if needed. Silent on fresh DB."""
+    """Check schema version and report status. Does NOT migrate -- init_db.py handles that."""
     if not os.path.exists(db_path):
         # Fresh DB - init_db.py will create it. Silent success.
         return
@@ -163,8 +164,10 @@ def check_and_migrate(db_path: str = DB_PATH):
         print("This might mean you're running an older version of the skill.")
         conn.close()
         sys.exit(1)
+    # Behind or fresh (version 0) -- init_db.py will handle migration via CREATE TABLE IF NOT EXISTS
+    print(f"DB schema v{current} is behind expected v{EXPECTED_VERSION}. init_db.py will handle upgrade.")
     conn.close()
-    migrate(db_path)
+    sys.exit(1)
 
 
 def migrate_down(db_path: str = DB_PATH):

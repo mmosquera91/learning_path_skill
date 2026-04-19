@@ -109,12 +109,85 @@ def create_v1_db(db_path: str):
     conn.close()
 
 
+def create_v2_db(db_path: str):
+    """Create a minimal v2 database with all tables and schema_version=2."""
+    conn = sqlite3.connect(db_path)
+    conn.execute("PRAGMA foreign_keys=ON")
+    c = conn.cursor()
+
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS config (
+            key TEXT PRIMARY KEY,
+            value TEXT
+        )
+    """)
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS paths (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            topic TEXT NOT NULL,
+            description TEXT,
+            status TEXT DEFAULT 'draft',
+            is_active INTEGER DEFAULT 0,
+            confirmed INTEGER DEFAULT 0,
+            created TEXT,
+            completed TEXT
+        )
+    """)
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS modules (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            path_id INTEGER NOT NULL,
+            title TEXT NOT NULL,
+            description TEXT,
+            module_order INTEGER NOT NULL,
+            status TEXT DEFAULT 'pending',
+            score_avg REAL DEFAULT 0,
+            times_repeated INTEGER DEFAULT 0,
+            started TEXT,
+            completed TEXT,
+            score REAL DEFAULT 0,
+            next_review_date TEXT,
+            FOREIGN KEY (path_id) REFERENCES paths(id) ON DELETE CASCADE
+        )
+    """)
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS resources (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            module_id INTEGER NOT NULL,
+            url TEXT NOT NULL,
+            title TEXT,
+            type TEXT,
+            verified TEXT DEFAULT 'pending',
+            FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE
+        )
+    """)
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS daily_tasks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            module_id INTEGER NOT NULL,
+            date TEXT NOT NULL,
+            content TEXT NOT NULL,
+            response TEXT,
+            score INTEGER,
+            feedback TEXT,
+            skipped INTEGER DEFAULT 0,
+            awaiting_response INTEGER DEFAULT 1,
+            response_window_end TEXT,
+            FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE
+        )
+    """)
+    c.execute("CREATE TABLE IF NOT EXISTS schema_version (version INTEGER)")
+    c.execute("INSERT INTO schema_version (version) VALUES (2)")
+    conn.commit()
+    conn.close()
+
+
 class TestMigrationV2:
     """Test suite for v1->v2 migration."""
 
-    def test_expected_version_is_2(self):
-        assert migrate_db.EXPECTED_VERSION == 2, (
-            f"EXPECTED_VERSION should be 2, got {migrate_db.EXPECTED_VERSION}"
+    def test_expected_version_is_3(self):
+        assert migrate_db.EXPECTED_VERSION == 3, (
+            f"EXPECTED_VERSION should be 3, got {migrate_db.EXPECTED_VERSION}"
         )
 
     def test_migrations_v2_has_8_statements(self):
@@ -189,19 +262,24 @@ class TestMigrationV2:
         migrate_db.migrate(db_path)
         conn = sqlite3.connect(db_path)
         ver = conn.execute("SELECT version FROM schema_version").fetchone()
-        assert ver[0] == 2, f"Should still be at v2 after double migrate, got v{ver[0]}"
+        assert ver[0] == 3, f"Should be at v3 after double migrate, got v{ver[0]}"
         conn.close()
 
-    def test_down_migration_reverses_v2(self, tmp_path):
+    def test_down_migration_v2_reverses_correctly(self, tmp_path):
+        """Down-migrate from v2 reverses the v1->v2 migration."""
         db_path = str(tmp_path / "test.db")
         create_v1_db(db_path)
-        migrate_db.migrate(db_path)
-        # Now down-migrate
+        # Manually set schema_version to 2 before down-migrating
+        conn = sqlite3.connect(db_path)
+        conn.execute("CREATE TABLE IF NOT EXISTS schema_version (version INTEGER)")
+        conn.execute("INSERT INTO schema_version (version) VALUES (2)")
+        conn.commit()
+        conn.close()
+        # Now down-migrate (v2 -> v1)
         migrate_db.migrate_down(db_path)
         conn = sqlite3.connect(db_path)
-        # Schema version should be 1
         ver = conn.execute("SELECT version FROM schema_version").fetchone()
-        assert ver[0] == 1, f"After --down, should be at v1, got v{ver[0]}"
+        assert ver[0] == 1, f"After --down from v2, should be at v1, got v{ver[0]}"
         # New columns should be gone
         cols = [r[1] for r in conn.execute("PRAGMA table_info(modules)").fetchall()]
         assert "score" not in cols, "modules.score should be removed by --down"
@@ -222,9 +300,9 @@ class TestMigrationV2:
     def test_down_migration_creates_backup(self, tmp_path):
         db_path = str(tmp_path / "test.db")
         create_v1_db(db_path)
-        migrate_db.migrate(db_path)
-        migrate_db.migrate_down(db_path)
-        backup_path = str(tmp_path / "test.db.bak.v2")
+        migrate_db.migrate(db_path)  # goes to v3
+        migrate_db.migrate_down(db_path)  # goes v3 -> v2
+        backup_path = str(tmp_path / "test.db.bak.v3")
         assert os.path.exists(backup_path), f"Backup file not created at {backup_path}"
 
     def test_down_on_v1_db_exits_gracefully(self, tmp_path):
@@ -281,43 +359,38 @@ class TestCheckFlag:
             raise AssertionError("--check should not exit on fresh DB")
 
     def test_check_flag_prints_already_current(self, tmp_path):
-        """--check on current DB should print 'Already at schema v2' and exit 0."""
-        # Create DB at v2 (use init_db then run migrate to set version)
+        """--check on current DB (v3) should print 'Already at schema v3' and exit 0."""
         db_path = str(tmp_path / "current.db")
-        import init_db
-        init_db.init_db()  # Creates v2 schema
-        # Set to v2 explicitly
-        conn = sqlite3.connect(db_path)
-        conn.execute("CREATE TABLE IF NOT EXISTS schema_version (version INTEGER)")
-        conn.execute("INSERT OR IGNORE INTO schema_version (version) VALUES (2)")
-        conn.commit()
-        conn.close()
-        # Now run check
+        # Create v3 DB directly (matching EXPECTED_VERSION)
+        create_v1_db(db_path)
+        migrate_db.migrate(db_path)  # This goes to v3
         import io
         import contextlib
         f = io.StringIO()
         with contextlib.redirect_stdout(f):
             migrate_db.check_and_migrate(db_path)
         output = f.getvalue()
-        assert "Already at schema v2" in output, f"Expected 'Already at schema v2', got: {output}"
+        assert "Already at schema v3" in output, f"Expected 'Already at schema v3', got: {output}"
 
-    def test_check_flag_migrates_behind_schema(self, tmp_path):
-        """--check on v1 DB should auto-migrate to v2."""
+    def test_check_flag_does_not_migrate_behind_schema(self, tmp_path):
+        """--check on behind DB should NOT migrate - init_db.py handles that."""
         db_path = str(tmp_path / "behind.db")
         create_v1_db(db_path)
         import io
         import contextlib
         f = io.StringIO()
-        with contextlib.redirect_stdout(f):
-            migrate_db.check_and_migrate(db_path)
+        try:
+            with contextlib.redirect_stdout(f):
+                migrate_db.check_and_migrate(db_path)
+            raise AssertionError("Should have exited with code 1")
+        except SystemExit as e:
+            assert e.code == 1, f"Expected exit code 1, got {e.code}"
         output = f.getvalue()
-        assert "Migrating:" in output or "Already at schema v2" in output, f"Expected migration output, got: {output}"
-        # Verify data preserved
+        assert "behind expected v3" in output, f"Expected 'behind expected v3', got: {output}"
+        # Verify DB was NOT migrated (still at v1)
         conn = sqlite3.connect(db_path)
         ver = conn.execute("SELECT version FROM schema_version").fetchone()
-        assert ver[0] == 2, f"Expected v2 after migration, got v{ver[0]}"
-        path = conn.execute("SELECT topic FROM paths WHERE id=1").fetchone()
-        assert path[0] == "Python", "Path data corrupted after migration"
+        assert ver[0] == 1, f"Expected v1 (no migration), got v{ver[0]}"
         conn.close()
 
     def test_check_flag_exits_1_on_newer_schema(self, tmp_path):

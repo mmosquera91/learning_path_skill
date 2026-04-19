@@ -103,6 +103,13 @@ def init_db():
         c.execute('INSERT OR IGNORE INTO config (key, value) VALUES (?, ?)', (key, value))
 
     conn.commit()
+
+    # Set schema version to 3 (matches EXPECTED_VERSION in migrate_db.py)
+    c.execute("CREATE TABLE IF NOT EXISTS schema_version (version INTEGER)")
+    c.execute("DELETE FROM schema_version")
+    c.execute("INSERT INTO schema_version (version) VALUES (3)")
+    conn.commit()
+
     conn.close()
 
     # Set file permissions: owner read/write only

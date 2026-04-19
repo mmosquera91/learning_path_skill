@@ -32,7 +32,7 @@ def save_syllabus(syllabus_data):
     for i, mod in enumerate(syllabus_data.get("modules", []), start=1):
         c.execute(
             "INSERT INTO modules (path_id, title, description, module_order, status) VALUES (?, ?, ?, ?, 'pending')",
-            (path_id, mod["title"], mod["description"], i + 1)
+            (path_id, mod["title"], mod["description"], i)
         )
         mod_id = c.lastrowid
         for res in mod.get("resources", []):
