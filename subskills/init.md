@@ -37,14 +37,14 @@ If active path exists, ask: "You already have an active path: {topic}. /tutor pa
 
 ## Resource Tier Reference (for cron context self-containment)
 
-| Tier | Description | Examples | Limits |
-|------|-------------|----------|--------|
-| TIER 1 | Interactive platforms with exercises | exercism.org, codecademy.com, duolingo.com, chess.com/lessons | MIN 50% per module |
-| TIER 2 | Official courses and docs | coursera.org, edx.org, khanacademy.org | Max 2/module |
-| TIER 3 | YouTube single videos ONLY | youtube.com/watch?v=... | Max 1/module, NO PLAYLISTS |
-| TIER 4 | Reference materials | wikipedia, github docs, medium | Max 1/module |
+| Tier | Source Type | Examples | Reliability | Max/Module |
+|------|-------------|----------|-------------|------------|
+| TIER 1 | Interactive platforms | exercism.org, codecademy.com, duolingo.com, chess.com/lessons | ⭐⭐⭐⭐⭐ | Unlimited |
+| TIER 2 | Official courses | Coursera, edX, Khan Academy, docs | ⭐⭐⭐⭐ | 2 |
+| TIER 3 | YouTube (single videos ONLY) | Individual videos, NO playlists | ⭐⭐ | 1 |
+| TIER 4 | Reference materials | Wikipedia, technical blogs | ⭐⭐ | 1 |
 
-TIER RULES: See inline tier table above. Full rules in CONTRIBUTING.md §1-3.
+TIER RULES: See inline tier table above. Full rules: CONTRIBUTING.md §1-3.
 
 ### 2. Research phase — gather real resources
 Use `delegate_task` with `web_search`:
