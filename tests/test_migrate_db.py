@@ -109,6 +109,79 @@ def create_v1_db(db_path: str):
     conn.close()
 
 
+def create_v2_db(db_path: str):
+    """Create a minimal v2 database with all tables and schema_version=2."""
+    conn = sqlite3.connect(db_path)
+    conn.execute("PRAGMA foreign_keys=ON")
+    c = conn.cursor()
+
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS config (
+            key TEXT PRIMARY KEY,
+            value TEXT
+        )
+    """)
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS paths (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            topic TEXT NOT NULL,
+            description TEXT,
+            status TEXT DEFAULT 'draft',
+            is_active INTEGER DEFAULT 0,
+            confirmed INTEGER DEFAULT 0,
+            created TEXT,
+            completed TEXT
+        )
+    """)
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS modules (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            path_id INTEGER NOT NULL,
+            title TEXT NOT NULL,
+            description TEXT,
+            module_order INTEGER NOT NULL,
+            status TEXT DEFAULT 'pending',
+            score_avg REAL DEFAULT 0,
+            times_repeated INTEGER DEFAULT 0,
+            started TEXT,
+            completed TEXT,
+            score REAL DEFAULT 0,
+            next_review_date TEXT,
+            FOREIGN KEY (path_id) REFERENCES paths(id) ON DELETE CASCADE
+        )
+    """)
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS resources (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            module_id INTEGER NOT NULL,
+            url TEXT NOT NULL,
+            title TEXT,
+            type TEXT,
+            verified TEXT DEFAULT 'pending',
+            FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE
+        )
+    """)
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS daily_tasks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            module_id INTEGER NOT NULL,
+            date TEXT NOT NULL,
+            content TEXT NOT NULL,
+            response TEXT,
+            score INTEGER,
+            feedback TEXT,
+            skipped INTEGER DEFAULT 0,
+            awaiting_response INTEGER DEFAULT 1,
+            response_window_end TEXT,
+            FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE
+        )
+    """)
+    c.execute("CREATE TABLE IF NOT EXISTS schema_version (version INTEGER)")
+    c.execute("INSERT INTO schema_version (version) VALUES (2)")
+    conn.commit()
+    conn.close()
+
+
 class TestMigrationV2:
     """Test suite for v1->v2 migration."""
 
@@ -282,16 +355,8 @@ class TestCheckFlag:
 
     def test_check_flag_prints_already_current(self, tmp_path):
         """--check on current DB should print 'Already at schema v2' and exit 0."""
-        # Create DB at v2 (use init_db then run migrate to set version)
         db_path = str(tmp_path / "current.db")
-        import init_db
-        init_db.init_db()  # Creates v2 schema
-        # Set to v2 explicitly
-        conn = sqlite3.connect(db_path)
-        conn.execute("CREATE TABLE IF NOT EXISTS schema_version (version INTEGER)")
-        conn.execute("INSERT OR IGNORE INTO schema_version (version) VALUES (2)")
-        conn.commit()
-        conn.close()
+        create_v2_db(db_path)
         # Now run check
         import io
         import contextlib
